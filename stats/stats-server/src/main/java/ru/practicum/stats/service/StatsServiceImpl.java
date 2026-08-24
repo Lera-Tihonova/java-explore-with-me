@@ -37,7 +37,7 @@ public class StatsServiceImpl implements StatsService {
             throw new IllegalArgumentException("Дата начала не может быть позже даты окончания");
         }
 
-        if (unique != null && unique) {
+        if (unique) {
             return statsRepository.getStatsUnique(start, end, uris);
         } else {
             return statsRepository.getStats(start, end, uris);
