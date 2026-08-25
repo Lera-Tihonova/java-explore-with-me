@@ -49,7 +49,8 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
             throw new IllegalArgumentException("Нельзя участвовать в неопубликованном событии");
         }
 
-        if (requestRepository.existsByRequesterIdAndEventIdAndStatus(userId, eventId, "CONFIRMED")) {
+        // Проверяем, есть ли уже запрос от этого пользователя на это событие
+        if (requestRepository.existsByRequesterIdAndEventIdAndStatus(userId, eventId, "PENDING")) {
             throw new IllegalArgumentException("Запрос уже существует");
         }
 
@@ -87,8 +88,16 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
     public ParticipationRequestDto cancelRequest(Long userId, Long requestId) {
         log.info("Отмена запроса userId={}, requestId={}", userId, requestId);
 
-        ParticipationRequest request = requestRepository.findByIdAndRequesterId(requestId, userId)
-                .orElseThrow(() -> new NotFoundException("Запрос не найден или недоступен"));
+        ParticipationRequest request = requestRepository.findById(requestId)
+                .orElseThrow(() -> new NotFoundException("Запрос с id " + requestId + " не найден"));
+
+        if (!request.getRequester().getId().equals(userId)) {
+            throw new IllegalArgumentException("Запрос не принадлежит пользователю");
+        }
+
+        if (request.getStatus().equals("CANCELED") || request.getStatus().equals("REJECTED")) {
+            throw new IllegalArgumentException("Запрос уже был отменён или отклонён");
+        }
 
         request.setStatus("CANCELED");
         ParticipationRequest updated = requestRepository.save(request);
@@ -161,6 +170,7 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
             }
         }
 
+        // Автоматически отклоняем оставшиеся PENDING запросы при достижении лимита
         if (request.getStatus().equals("CONFIRMED") &&
                 event.getParticipantLimit() > 0 &&
                 confirmedCount >= event.getParticipantLimit()) {

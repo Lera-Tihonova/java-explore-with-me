@@ -8,7 +8,11 @@ import ru.practicum.main.dto.EventFullDto;
 import ru.practicum.main.dto.EventShortDto;
 import ru.practicum.main.dto.NewEventDto;
 import ru.practicum.main.dto.UpdateEventUserRequest;
+import ru.practicum.main.dto.ParticipationRequestDto;
+import ru.practicum.main.dto.EventRequestStatusUpdateRequest;
+import ru.practicum.main.dto.EventRequestStatusUpdateResult;
 import ru.practicum.main.service.EventService;
+import ru.practicum.main.service.ParticipationRequestService;
 
 import jakarta.validation.Valid;
 import java.util.List;
@@ -20,6 +24,7 @@ import java.util.List;
 public class PrivateEventController {
 
     private final EventService eventService;
+    private final ParticipationRequestService requestService;
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -54,5 +59,22 @@ public class PrivateEventController {
             @Valid @RequestBody UpdateEventUserRequest request) {
         log.info("PATCH /users/{}/events/{} - обновление события", userId, eventId);
         return eventService.updateEventByUser(userId, eventId, request);
+    }
+
+    @GetMapping("/{eventId}/requests")
+    public List<ParticipationRequestDto> getEventRequests(
+            @PathVariable Long userId,
+            @PathVariable Long eventId) {
+        log.info("GET /users/{}/events/{}/requests - получение запросов на участие в событии", userId, eventId);
+        return requestService.getRequestsByEvent(userId, eventId);
+    }
+
+    @PatchMapping("/{eventId}/requests")
+    public EventRequestStatusUpdateResult updateRequestStatus(
+            @PathVariable Long userId,
+            @PathVariable Long eventId,
+            @Valid @RequestBody EventRequestStatusUpdateRequest request) {
+        log.info("PATCH /users/{}/events/{}/requests - изменение статуса запросов", userId, eventId);
+        return requestService.updateRequestStatus(userId, eventId, request);
     }
 }
