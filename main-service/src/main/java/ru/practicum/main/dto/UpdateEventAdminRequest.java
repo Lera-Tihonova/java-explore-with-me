@@ -53,16 +53,24 @@ public class UpdateEventAdminRequest {
     private Boolean convertToBoolean(Object value) {
         if (value == null) return null;
         if (value instanceof Boolean) return (Boolean) value;
+        if (value instanceof Number) {
+            return ((Number) value).intValue() != 0;
+        }
         if (value instanceof String) {
             String str = ((String) value).trim().toLowerCase();
-            return "true".equals(str) || "false".equals(str) ? Boolean.valueOf(str) : null;
+            if ("true".equals(str) || "false".equals(str)) {
+                return Boolean.valueOf(str);
+            }
+            return null;
         }
         return null;
     }
 
     private Integer convertToInteger(Object value) {
         if (value == null) return null;
-        if (value instanceof Integer) return (Integer) value;
+        if (value instanceof Number) {
+            return ((Number) value).intValue();
+        }
         if (value instanceof String) {
             try {
                 return Integer.parseInt((String) value);
