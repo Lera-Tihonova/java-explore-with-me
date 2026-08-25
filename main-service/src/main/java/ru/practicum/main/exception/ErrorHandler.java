@@ -1,6 +1,7 @@
 package ru.practicum.main.exception;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -50,9 +51,9 @@ public class ErrorHandler {
 
     @ExceptionHandler
     @ResponseStatus(HttpStatus.CONFLICT)
-    public ErrorResponse handleConflict(RuntimeException e) {
-        log.error("Конфликт: {}", e.getMessage());
-        return ErrorResponse.conflict(e.getMessage());
+    public ErrorResponse handleDataIntegrityViolation(DataIntegrityViolationException e) {
+        log.error("Нарушение целостности данных: {}", e.getMessage(), e);
+        return ErrorResponse.conflict("Нарушение целостности данных");
     }
 
     @ExceptionHandler
