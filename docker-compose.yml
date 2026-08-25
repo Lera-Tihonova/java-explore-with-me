@@ -17,6 +17,24 @@ services:
       - stats-db-data:/var/lib/postgresql/data
     restart: always
 
+  main-db:
+    image: postgres:15-alpine
+    container_name: main-db
+    environment:
+      - POSTGRES_DB=explore-with-me-main
+      - POSTGRES_USER=main
+      - POSTGRES_PASSWORD=main
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U main -d explore-with-me-main"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - main-db-data:/var/lib/postgresql/data
+    restart: always
+
   stats-server:
     build: stats/stats-server
     container_name: stats-server
@@ -31,5 +49,23 @@ services:
       - SPRING_DATASOURCE_PASSWORD=stats
     restart: always
 
+  main-service:
+    build: main-service
+    container_name: main-service
+    ports:
+      - "8080:8080"
+    depends_on:
+      main-db:
+        condition: service_healthy
+      stats-server:
+        condition: service_started
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://main-db:5432/explore-with-me-main
+      - SPRING_DATASOURCE_USERNAME=main
+      - SPRING_DATASOURCE_PASSWORD=main
+      - STATS_SERVER_URL=http://stats-server:9090
+    restart: always
+
 volumes:
   stats-db-data:
+  main-db-data:

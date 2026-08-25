@@ -1,0 +1,2 @@
+public class CompilationService {
+}
