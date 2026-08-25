@@ -1,5 +1,7 @@
 package ru.practicum.main.dto;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,6 +14,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UpdateEventAdminRequest {
+
     private String annotation;
     private Long category;
     private String description;
@@ -20,6 +23,53 @@ public class UpdateEventAdminRequest {
     private Boolean paid;
     private Integer participantLimit;
     private Boolean requestModeration;
-    private String stateAction; // PUBLISH_EVENT, REJECT_EVENT
+    private String stateAction;
     private String title;
+
+    @JsonCreator
+    public UpdateEventAdminRequest(
+            @JsonProperty("annotation") String annotation,
+            @JsonProperty("category") Long category,
+            @JsonProperty("description") String description,
+            @JsonProperty("eventDate") LocalDateTime eventDate,
+            @JsonProperty("location") Location location,
+            @JsonProperty("paid") Object paid,
+            @JsonProperty("participantLimit") Object participantLimit,
+            @JsonProperty("requestModeration") Object requestModeration,
+            @JsonProperty("stateAction") String stateAction,
+            @JsonProperty("title") String title) {
+        this.annotation = annotation;
+        this.category = category;
+        this.description = description;
+        this.eventDate = eventDate;
+        this.location = location;
+        this.paid = convertToBoolean(paid);
+        this.participantLimit = convertToInteger(participantLimit);
+        this.requestModeration = convertToBoolean(requestModeration);
+        this.stateAction = stateAction;
+        this.title = title;
+    }
+
+    private Boolean convertToBoolean(Object value) {
+        if (value == null) return null;
+        if (value instanceof Boolean) return (Boolean) value;
+        if (value instanceof String) {
+            String str = ((String) value).trim().toLowerCase();
+            return "true".equals(str) || "false".equals(str) ? Boolean.valueOf(str) : null;
+        }
+        return null;
+    }
+
+    private Integer convertToInteger(Object value) {
+        if (value == null) return null;
+        if (value instanceof Integer) return (Integer) value;
+        if (value instanceof String) {
+            try {
+                return Integer.parseInt((String) value);
+            } catch (NumberFormatException e) {
+                return null;
+            }
+        }
+        return null;
+    }
 }
