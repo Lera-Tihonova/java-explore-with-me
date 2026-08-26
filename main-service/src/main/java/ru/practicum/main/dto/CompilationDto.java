@@ -15,5 +15,5 @@ public class CompilationDto {
     private Long id;
     private String title;
     private Boolean pinned;
-    private Set<EventShortDto> events;
+    private Set<EventShortDto> events;  // ← тип Set<EventShortDto>
 }
