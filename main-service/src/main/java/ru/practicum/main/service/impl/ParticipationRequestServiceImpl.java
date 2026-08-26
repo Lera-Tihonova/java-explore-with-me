@@ -43,7 +43,7 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
                 .orElseThrow(() -> new NotFoundException("Событие с id " + eventId + " не найдено"));
 
         if (event.getInitiator().getId().equals(userId)) {
-            throw new IllegalArgumentException("Инициатор события не может создать запрос на участие");
+            throw new ConflictException("Инициатор события не может создать запрос на участие");
         }
 
         if (event.getState() != EventState.PUBLISHED) {
@@ -59,11 +59,14 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
             throw new ConflictException("Достигнут лимит участников");
         }
 
+        // Определяем статус запроса в зависимости от модерации
+        String status = event.getRequestModeration() ? "PENDING" : "CONFIRMED";
+
         ParticipationRequest request = ParticipationRequest.builder()
                 .created(LocalDateTime.now())
                 .event(event)
                 .requester(requester)
-                .status(event.getRequestModeration() ? "PENDING" : "CONFIRMED")
+                .status(status)
                 .build();
 
         ParticipationRequest saved = requestRepository.save(request);

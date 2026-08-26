@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.main.dto.NewUserRequest;
 import ru.practicum.main.dto.UserDto;
+import ru.practicum.main.exception.ConflictException;
 import ru.practicum.main.exception.NotFoundException;
 import ru.practicum.main.mapper.UserMapper;
 import ru.practicum.main.model.User;
@@ -31,7 +32,7 @@ public class UserServiceImpl implements UserService {
         log.info("Создание пользователя с email: {}", request.getEmail());
 
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new IllegalArgumentException("Пользователь с таким email уже существует");
+            throw new ConflictException("Пользователь с таким email уже существует");
         }
 
         User user = UserMapper.toEntity(request);
