@@ -36,7 +36,7 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
     public ParticipationRequestDto createRequest(Long userId, Long eventId) {
         log.info("Создание запроса на участие userId={}, eventId={}", userId, eventId);
 
-        // Проверка обязательного параметра
+        // Проверка обязательного параметра eventId
         if (eventId == null) {
             throw new IllegalArgumentException("eventId обязателен для создания запроса");
         }
