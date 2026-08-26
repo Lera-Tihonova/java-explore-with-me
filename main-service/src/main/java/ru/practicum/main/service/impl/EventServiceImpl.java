@@ -145,6 +145,11 @@ public class EventServiceImpl implements EventService {
             }
         }
 
+        if (request.getEventDate() != null && request.getEventDate().isBefore(LocalDateTime.now())) {
+            throw new IllegalArgumentException("Дата события не может быть в прошлом");
+        }
+        // ===============================
+
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new NotFoundException("Событие с id " + eventId + " не найдено"));
 
@@ -267,10 +272,15 @@ public class EventServiceImpl implements EventService {
             }
         }
 
+        if (request.getEventDate() != null && request.getEventDate().isBefore(LocalDateTime.now())) {
+            throw new IllegalArgumentException("Дата события не может быть в прошлом");
+        }
+
         if (request.getEventDate() != null &&
                 request.getEventDate().isBefore(LocalDateTime.now().plusHours(1))) {
             throw new IllegalArgumentException("Дата события должна быть не раньше чем через 1 час");
         }
+        // ===============================
 
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new NotFoundException("Событие с id " + eventId + " не найдено"));
@@ -344,11 +354,25 @@ public class EventServiceImpl implements EventService {
         }
 
         // Используем нативный SQL-запрос
-        List<Event> events = eventRepository.findAllByPublicNative(text, categories, paid, rangeStart, rangeEnd,
-                onlyAvailable != null && onlyAvailable, size, from);
+        List<Event> events = eventRepository.findAllByPublicNative(
+                text,
+                categories,
+                paid,
+                rangeStart,
+                rangeEnd,
+                onlyAvailable != null && onlyAvailable,
+                size,
+                from
+        );
 
-        Long total = eventRepository.countAllByPublicNative(text, categories, paid, rangeStart, rangeEnd,
-                onlyAvailable != null && onlyAvailable);
+        Long total = eventRepository.countAllByPublicNative(
+                text,
+                categories,
+                paid,
+                rangeStart,
+                rangeEnd,
+                onlyAvailable != null && onlyAvailable
+        );
 
         Page<Event> eventPage = new PageImpl<>(events, PageRequest.of(from / size, size), total);
 

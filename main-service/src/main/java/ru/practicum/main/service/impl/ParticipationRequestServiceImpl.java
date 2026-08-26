@@ -42,24 +42,28 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new NotFoundException("Событие с id " + eventId + " не найдено"));
 
+        // Инициатор не может создать запрос
         if (event.getInitiator().getId().equals(userId)) {
             throw new ConflictException("Инициатор события не может создать запрос на участие");
         }
 
+        // Событие должно быть опубликовано
         if (event.getState() != EventState.PUBLISHED) {
-            throw new IllegalArgumentException("Нельзя участвовать в неопубликованном событии");
+            throw new ConflictException("Нельзя участвовать в неопубликованном событии");
         }
 
+        // Проверка на повторный запрос
         if (requestRepository.existsByRequesterIdAndEventIdAndStatus(userId, eventId, "PENDING")) {
             throw new ConflictException("Запрос уже существует");
         }
 
+        // Проверка лимита участников
         Long confirmedCount = requestRepository.countConfirmedByEventId(eventId);
         if (event.getParticipantLimit() > 0 && confirmedCount >= event.getParticipantLimit()) {
             throw new ConflictException("Достигнут лимит участников");
         }
 
-        // Определяем статус запроса в зависимости от модерации
+        // Определяем статус в зависимости от модерации
         String status = event.getRequestModeration() ? "PENDING" : "CONFIRMED";
 
         ParticipationRequest request = ParticipationRequest.builder()
@@ -95,11 +99,11 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
                 .orElseThrow(() -> new NotFoundException("Запрос с id " + requestId + " не найден"));
 
         if (!request.getRequester().getId().equals(userId)) {
-            throw new IllegalArgumentException("Запрос не принадлежит пользователю");
+            throw new ConflictException("Запрос не принадлежит пользователю");
         }
 
         if (request.getStatus().equals("CANCELED") || request.getStatus().equals("REJECTED")) {
-            throw new IllegalArgumentException("Запрос уже был отменён или отклонён");
+            throw new ConflictException("Запрос уже был отменён или отклонён");
         }
 
         request.setStatus("CANCELED");
@@ -115,7 +119,7 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
                 .orElseThrow(() -> new NotFoundException("Событие с id " + eventId + " не найдено"));
 
         if (!event.getInitiator().getId().equals(userId)) {
-            throw new IllegalArgumentException("Пользователь не является инициатором события");
+            throw new ConflictException("Пользователь не является инициатором события");
         }
 
         return requestRepository.findByEventId(eventId).stream()
@@ -133,11 +137,11 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
                 .orElseThrow(() -> new NotFoundException("Событие с id " + eventId + " не найдено"));
 
         if (!event.getInitiator().getId().equals(userId)) {
-            throw new IllegalArgumentException("Пользователь не является инициатором события");
+            throw new ConflictException("Пользователь не является инициатором события");
         }
 
         if (!event.getRequestModeration() || event.getParticipantLimit() == 0) {
-            throw new IllegalArgumentException("Модерация запросов не требуется");
+            throw new ConflictException("Модерация запросов не требуется");
         }
 
         List<ParticipationRequest> requests = requestRepository.findAllById(request.getRequestIds());
@@ -152,10 +156,10 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
 
         for (ParticipationRequest pr : requests) {
             if (!pr.getStatus().equals("PENDING")) {
-                throw new IllegalArgumentException("Запрос должен быть в статусе PENDING");
+                throw new ConflictException("Запрос должен быть в статусе PENDING");
             }
             if (!pr.getEvent().getId().equals(eventId)) {
-                throw new IllegalArgumentException("Запрос не относится к данному событию");
+                throw new ConflictException("Запрос не относится к данному событию");
             }
 
             if (request.getStatus().equals("CONFIRMED")) {
@@ -173,7 +177,6 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
             }
         }
 
-        // Автоматически отклоняем оставшиеся PENDING запросы при достижении лимита
         if (request.getStatus().equals("CONFIRMED") &&
                 event.getParticipantLimit() > 0 &&
                 confirmedCount >= event.getParticipantLimit()) {

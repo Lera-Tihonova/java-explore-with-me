@@ -34,7 +34,7 @@ public interface EventRepository extends JpaRepository<Event, Long> {
                                @Param("rangeEnd") LocalDateTime rangeEnd,
                                Pageable pageable);
 
-    // Нативный SQL-запрос для публичного поиска
+    // НАТИВНЫЙ SQL-ЗАПРОС для публичного поиска
     @Query(value = "SELECT * FROM events e " +
             "WHERE e.state = 'PUBLISHED' " +
             "AND (:text IS NULL OR CAST(e.annotation AS TEXT) ILIKE CONCAT('%', :text, '%') OR CAST(e.description AS TEXT) ILIKE CONCAT('%', :text, '%')) " +
