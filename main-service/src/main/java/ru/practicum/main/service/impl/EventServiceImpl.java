@@ -155,7 +155,6 @@ public class EventServiceImpl implements EventService {
             throw new IllegalArgumentException("Пользователь не является инициатором события");
         }
 
-        // Проверка: нельзя изменить опубликованное событие
         if (event.getState() == EventState.PUBLISHED) {
             throw new ConflictException("Нельзя изменить опубликованное событие");
         }
