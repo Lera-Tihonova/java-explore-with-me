@@ -51,6 +51,13 @@ public class ErrorHandler {
 
     @ExceptionHandler
     @ResponseStatus(HttpStatus.CONFLICT)
+    public ErrorResponse handleConflict(ConflictException e) {
+        log.error("Конфликт: {}", e.getMessage());
+        return ErrorResponse.conflict(e.getMessage());
+    }
+
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.CONFLICT)
     public ErrorResponse handleDataIntegrityViolation(DataIntegrityViolationException e) {
         log.error("Нарушение целостности данных: {}", e.getMessage(), e);
         return ErrorResponse.conflict("Нарушение целостности данных");

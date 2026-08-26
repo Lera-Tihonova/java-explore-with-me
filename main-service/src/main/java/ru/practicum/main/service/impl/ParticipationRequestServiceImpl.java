@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.main.dto.ParticipationRequestDto;
 import ru.practicum.main.dto.EventRequestStatusUpdateRequest;
 import ru.practicum.main.dto.EventRequestStatusUpdateResult;
+import ru.practicum.main.exception.ConflictException;
 import ru.practicum.main.exception.NotFoundException;
 import ru.practicum.main.mapper.ParticipationRequestMapper;
 import ru.practicum.main.model.*;
@@ -49,14 +50,13 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
             throw new IllegalArgumentException("Нельзя участвовать в неопубликованном событии");
         }
 
-        // Проверяем, есть ли уже запрос от этого пользователя на это событие
         if (requestRepository.existsByRequesterIdAndEventIdAndStatus(userId, eventId, "PENDING")) {
-            throw new IllegalArgumentException("Запрос уже существует");
+            throw new ConflictException("Запрос уже существует");
         }
 
         Long confirmedCount = requestRepository.countConfirmedByEventId(eventId);
         if (event.getParticipantLimit() > 0 && confirmedCount >= event.getParticipantLimit()) {
-            throw new IllegalArgumentException("Достигнут лимит участников");
+            throw new ConflictException("Достигнут лимит участников");
         }
 
         ParticipationRequest request = ParticipationRequest.builder()

@@ -162,7 +162,6 @@ public class EventServiceImpl implements EventService {
             throw new IllegalArgumentException("Дата события должна быть не раньше чем через 2 часа");
         }
 
-        // Обновление полей
         if (request.getAnnotation() != null) {
             event.setAnnotation(request.getAnnotation());
         }
@@ -272,7 +271,6 @@ public class EventServiceImpl implements EventService {
                 request.getEventDate().isBefore(LocalDateTime.now().plusHours(1))) {
             throw new IllegalArgumentException("Дата события должна быть не раньше чем через 1 час");
         }
-        // ===============================
 
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new NotFoundException("Событие с id " + eventId + " не найдено"));
