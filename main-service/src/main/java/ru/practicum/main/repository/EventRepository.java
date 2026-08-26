@@ -1,6 +1,7 @@
 package ru.practicum.main.repository;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -16,7 +17,6 @@ import java.util.List;
 @Repository
 public interface EventRepository extends JpaRepository<Event, Long> {
 
-    // Добавленный метод для проверки наличия событий в категории
     List<Event> findByCategory(Category category);
 
     Page<Event> findByInitiatorId(Long userId, Pageable pageable);
@@ -34,21 +34,42 @@ public interface EventRepository extends JpaRepository<Event, Long> {
                                @Param("rangeEnd") LocalDateTime rangeEnd,
                                Pageable pageable);
 
-    @Query("SELECT e FROM Event e " +
+    // Нативный SQL-запрос для публичного поиска
+    @Query(value = "SELECT * FROM events e " +
             "WHERE e.state = 'PUBLISHED' " +
-            "AND (:text IS NULL OR LOWER(e.annotation) LIKE LOWER(CONCAT('%', :text, '%')) OR LOWER(e.description) LIKE LOWER(CONCAT('%', :text, '%'))) " +
-            "AND (:categories IS NULL OR e.category.id IN :categories) " +
+            "AND (:text IS NULL OR CAST(e.annotation AS TEXT) ILIKE CONCAT('%', :text, '%') OR CAST(e.description AS TEXT) ILIKE CONCAT('%', :text, '%')) " +
+            "AND (:categories IS NULL OR e.category_id IN (:categories)) " +
             "AND (:paid IS NULL OR e.paid = :paid) " +
-            "AND (e.eventDate >= :rangeStart) " +
-            "AND (e.eventDate <= :rangeEnd) " +
-            "AND (:onlyAvailable = false OR e.participantLimit = 0 OR (SELECT COUNT(r) FROM ParticipationRequest r WHERE r.event.id = e.id AND r.status = 'CONFIRMED') < e.participantLimit)")
-    Page<Event> findAllByPublic(@Param("text") String text,
+            "AND (e.event_date >= :rangeStart) " +
+            "AND (e.event_date <= :rangeEnd) " +
+            "AND (:onlyAvailable = false OR e.participant_limit = 0 OR (SELECT COUNT(*) FROM participation_requests pr WHERE pr.event_id = e.id AND pr.status = 'CONFIRMED') < e.participant_limit) " +
+            "ORDER BY e.event_date ASC " +
+            "LIMIT :limit OFFSET :offset",
+            nativeQuery = true)
+    List<Event> findAllByPublicNative(@Param("text") String text,
+                                      @Param("categories") List<Long> categories,
+                                      @Param("paid") Boolean paid,
+                                      @Param("rangeStart") LocalDateTime rangeStart,
+                                      @Param("rangeEnd") LocalDateTime rangeEnd,
+                                      @Param("onlyAvailable") Boolean onlyAvailable,
+                                      @Param("limit") int limit,
+                                      @Param("offset") int offset);
+
+    @Query(value = "SELECT COUNT(*) FROM events e " +
+            "WHERE e.state = 'PUBLISHED' " +
+            "AND (:text IS NULL OR CAST(e.annotation AS TEXT) ILIKE CONCAT('%', :text, '%') OR CAST(e.description AS TEXT) ILIKE CONCAT('%', :text, '%')) " +
+            "AND (:categories IS NULL OR e.category_id IN (:categories)) " +
+            "AND (:paid IS NULL OR e.paid = :paid) " +
+            "AND (e.event_date >= :rangeStart) " +
+            "AND (e.event_date <= :rangeEnd) " +
+            "AND (:onlyAvailable = false OR e.participant_limit = 0 OR (SELECT COUNT(*) FROM participation_requests pr WHERE pr.event_id = e.id AND pr.status = 'CONFIRMED') < e.participant_limit)",
+            nativeQuery = true)
+    Long countAllByPublicNative(@Param("text") String text,
                                 @Param("categories") List<Long> categories,
                                 @Param("paid") Boolean paid,
                                 @Param("rangeStart") LocalDateTime rangeStart,
                                 @Param("rangeEnd") LocalDateTime rangeEnd,
-                                @Param("onlyAvailable") Boolean onlyAvailable,
-                                Pageable pageable);
+                                @Param("onlyAvailable") Boolean onlyAvailable);
 
     @Query("SELECT COUNT(r) FROM ParticipationRequest r WHERE r.event.id = :eventId AND r.status = 'CONFIRMED'")
     Long countConfirmedRequests(@Param("eventId") Long eventId);

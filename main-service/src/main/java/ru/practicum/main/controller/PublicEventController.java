@@ -37,7 +37,6 @@ public class PublicEventController {
             HttpServletRequest request) {
         log.info("GET /events - получение событий с фильтрацией");
 
-        // Сохраняем статистику
         saveStats(request);
 
         return eventService.getEventsForPublic(text, categories, paid, rangeStart, rangeEnd, onlyAvailable, sort, from, size);
@@ -49,7 +48,6 @@ public class PublicEventController {
             HttpServletRequest request) {
         log.info("GET /events/{} - получение подробной информации о событии", id);
 
-        // Сохраняем статистику
         saveStats(request);
 
         return eventService.getEventForPublic(id);

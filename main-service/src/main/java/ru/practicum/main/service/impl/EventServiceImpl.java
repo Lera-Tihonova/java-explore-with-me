@@ -3,6 +3,7 @@ package ru.practicum.main.service.impl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -48,7 +49,6 @@ public class EventServiceImpl implements EventService {
         if (request.getParticipantLimit() != null && request.getParticipantLimit() > 10000) {
             throw new IllegalArgumentException("Лимит участников не может превышать 10000");
         }
-        // ===============================
 
         User initiator = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("Пользователь с id " + userId + " не найден"));
@@ -144,7 +144,6 @@ public class EventServiceImpl implements EventService {
                 throw new IllegalArgumentException("Описание должно быть от 20 до 7000 символов");
             }
         }
-        // ===============================
 
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new NotFoundException("Событие с id " + eventId + " не найдено"));
@@ -162,6 +161,7 @@ public class EventServiceImpl implements EventService {
             throw new IllegalArgumentException("Дата события должна быть не раньше чем через 2 часа");
         }
 
+        // Обновление полей
         if (request.getAnnotation() != null) {
             event.setAnnotation(request.getAnnotation());
         }
@@ -343,18 +343,16 @@ public class EventServiceImpl implements EventService {
             rangeEnd = LocalDateTime.now().plusYears(100);
         }
 
-        Sort sortBy;
-        if (sort != null && sort.equals("VIEWS")) {
-            sortBy = Sort.by("views").descending();
-        } else {
-            sortBy = Sort.by("eventDate").ascending();
-        }
+        // Используем нативный SQL-запрос
+        List<Event> events = eventRepository.findAllByPublicNative(text, categories, paid, rangeStart, rangeEnd,
+                onlyAvailable != null && onlyAvailable, size, from);
 
-        Pageable pageable = PageRequest.of(from / size, size, sortBy);
-        Page<Event> events = eventRepository.findAllByPublic(text, categories, paid, rangeStart, rangeEnd,
-                onlyAvailable != null && onlyAvailable, pageable);
+        Long total = eventRepository.countAllByPublicNative(text, categories, paid, rangeStart, rangeEnd,
+                onlyAvailable != null && onlyAvailable);
 
-        return events.stream()
+        Page<Event> eventPage = new PageImpl<>(events, PageRequest.of(from / size, size), total);
+
+        return eventPage.stream()
                 .map(event -> {
                     Long confirmed = requestRepository.countConfirmedByEventId(event.getId());
                     Long views = getViewsCount(event.getId());
