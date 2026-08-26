@@ -41,12 +41,14 @@ public class EventServiceImpl implements EventService {
     public EventFullDto createEvent(Long userId, NewEventDto request) {
         log.info("Создание события пользователем userId={}", userId);
 
+        // ========== ВАЛИДАЦИЯ ==========
         if (request.getParticipantLimit() != null && request.getParticipantLimit() < 0) {
             throw new IllegalArgumentException("Лимит участников не может быть отрицательным");
         }
         if (request.getParticipantLimit() != null && request.getParticipantLimit() > 10000) {
             throw new IllegalArgumentException("Лимит участников не может превышать 10000");
         }
+        // ===============================
 
         User initiator = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("Пользователь с id " + userId + " не найден"));
@@ -125,6 +127,25 @@ public class EventServiceImpl implements EventService {
             throw new IllegalArgumentException("Лимит участников не может превышать 10000");
         }
 
+        if (request.getTitle() != null) {
+            if (request.getTitle().length() < 3 || request.getTitle().length() > 120) {
+                throw new IllegalArgumentException("Заголовок должен быть от 3 до 120 символов");
+            }
+        }
+
+        if (request.getAnnotation() != null) {
+            if (request.getAnnotation().length() < 20 || request.getAnnotation().length() > 2000) {
+                throw new IllegalArgumentException("Аннотация должна быть от 20 до 2000 символов");
+            }
+        }
+
+        if (request.getDescription() != null) {
+            if (request.getDescription().length() < 20 || request.getDescription().length() > 7000) {
+                throw new IllegalArgumentException("Описание должно быть от 20 до 7000 символов");
+            }
+        }
+        // ===============================
+
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new NotFoundException("Событие с id " + eventId + " не найдено"));
 
@@ -141,6 +162,7 @@ public class EventServiceImpl implements EventService {
             throw new IllegalArgumentException("Дата события должна быть не раньше чем через 2 часа");
         }
 
+        // Обновление полей
         if (request.getAnnotation() != null) {
             event.setAnnotation(request.getAnnotation());
         }
@@ -228,14 +250,34 @@ public class EventServiceImpl implements EventService {
             throw new IllegalArgumentException("Лимит участников не может превышать 10000");
         }
 
-        Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new NotFoundException("Событие с id " + eventId + " не найдено"));
+        if (request.getTitle() != null) {
+            if (request.getTitle().length() < 3 || request.getTitle().length() > 120) {
+                throw new IllegalArgumentException("Заголовок должен быть от 3 до 120 символов");
+            }
+        }
+
+        if (request.getAnnotation() != null) {
+            if (request.getAnnotation().length() < 20 || request.getAnnotation().length() > 2000) {
+                throw new IllegalArgumentException("Аннотация должна быть от 20 до 2000 символов");
+            }
+        }
+
+        if (request.getDescription() != null) {
+            if (request.getDescription().length() < 20 || request.getDescription().length() > 7000) {
+                throw new IllegalArgumentException("Описание должно быть от 20 до 7000 символов");
+            }
+        }
 
         if (request.getEventDate() != null &&
                 request.getEventDate().isBefore(LocalDateTime.now().plusHours(1))) {
             throw new IllegalArgumentException("Дата события должна быть не раньше чем через 1 час");
         }
+        // ===============================
 
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new NotFoundException("Событие с id " + eventId + " не найдено"));
+
+        // Обновление полей
         if (request.getAnnotation() != null) {
             event.setAnnotation(request.getAnnotation());
         }
