@@ -32,9 +32,11 @@ public class CategoryServiceImpl implements CategoryService {
     @Transactional
     public CategoryDto createCategory(NewCategoryDto request) {
         log.info("Создание категории: {}", request.getName());
+
         if (categoryRepository.existsByName(request.getName())) {
             throw new ConflictException("Категория с таким именем уже существует");
         }
+
         Category category = CategoryMapper.toEntity(request);
         Category savedCategory = categoryRepository.save(category);
         return CategoryMapper.toDto(savedCategory);
@@ -44,11 +46,14 @@ public class CategoryServiceImpl implements CategoryService {
     @Transactional
     public CategoryDto updateCategory(Long catId, CategoryDto request) {
         log.info("Обновление категории с id: {}", catId);
+
         Category category = categoryRepository.findById(catId)
                 .orElseThrow(() -> new NotFoundException("Категория с id " + catId + " не найдена"));
+
         if (categoryRepository.existsByName(request.getName())) {
             throw new ConflictException("Категория с таким именем уже существует");
         }
+
         category.setName(request.getName());
         Category updatedCategory = categoryRepository.save(category);
         return CategoryMapper.toDto(updatedCategory);
@@ -58,17 +63,21 @@ public class CategoryServiceImpl implements CategoryService {
     @Transactional
     public void deleteCategory(Long catId) {
         log.info("Удаление категории с id: {}", catId);
+
         Category category = categoryRepository.findById(catId)
                 .orElseThrow(() -> new NotFoundException("Категория с id " + catId + " не найдена"));
+
         if (!eventRepository.findByCategory(category).isEmpty()) {
             throw new ConflictException("Категория не пуста, нельзя удалить");
         }
+
         categoryRepository.deleteById(catId);
     }
 
     @Override
     public List<CategoryDto> getCategories(int from, int size) {
         log.info("Получение списка категорий: from={}, size={}", from, size);
+
         Pageable pageable = PageRequest.of(from / size, size);
         return categoryRepository.findAll(pageable).stream()
                 .map(CategoryMapper::toDto)
@@ -78,6 +87,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public CategoryDto getCategoryById(Long catId) {
         log.info("Получение категории по id: {}", catId);
+
         Category category = categoryRepository.findById(catId)
                 .orElseThrow(() -> new NotFoundException("Категория с id " + catId + " не найдена"));
         return CategoryMapper.toDto(category);

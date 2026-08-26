@@ -156,7 +156,7 @@ public class EventServiceImpl implements EventService {
         }
 
         if (event.getState() == EventState.PUBLISHED) {
-            throw new IllegalArgumentException("Нельзя изменить опубликованное событие");
+            throw new ConflictException("Нельзя изменить опубликованное событие");
         }
 
         if (request.getEventDate() != null &&
@@ -243,7 +243,6 @@ public class EventServiceImpl implements EventService {
     public EventFullDto updateEventByAdmin(Long eventId, UpdateEventAdminRequest request) {
         log.info("Обновление события администратором eventId={}", eventId);
 
-        // ========== ВАЛИДАЦИЯ ==========
         if (request.getParticipantLimit() != null && request.getParticipantLimit() < 0) {
             throw new IllegalArgumentException("Лимит участников не может быть отрицательным");
         }
@@ -277,12 +276,10 @@ public class EventServiceImpl implements EventService {
                 request.getEventDate().isBefore(LocalDateTime.now().plusHours(1))) {
             throw new IllegalArgumentException("Дата события должна быть не раньше чем через 1 час");
         }
-        // ===============================
 
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new NotFoundException("Событие с id " + eventId + " не найдено"));
 
-        // Обновление полей
         if (request.getAnnotation() != null) {
             event.setAnnotation(request.getAnnotation());
         }
@@ -316,7 +313,6 @@ public class EventServiceImpl implements EventService {
             event.setTitle(request.getTitle());
         }
 
-        // ========== ИСПРАВЛЕННАЯ ЛОГИКА ПУБЛИКАЦИИ ==========
         if (request.getStateAction() != null) {
             if (request.getStateAction().equals("PUBLISH_EVENT")) {
                 if (event.getState() == EventState.PUBLISHED) {
@@ -334,7 +330,6 @@ public class EventServiceImpl implements EventService {
                 event.setState(EventState.CANCELED);
             }
         }
-        // =================================================
 
         Event updatedEvent = eventRepository.save(event);
         Long confirmed = requestRepository.countConfirmedByEventId(eventId);
@@ -355,7 +350,6 @@ public class EventServiceImpl implements EventService {
             rangeEnd = LocalDateTime.now().plusYears(100);
         }
 
-        // Используем нативный SQL-запрос
         List<Event> events = eventRepository.findAllByPublicNative(
                 text,
                 categories,
