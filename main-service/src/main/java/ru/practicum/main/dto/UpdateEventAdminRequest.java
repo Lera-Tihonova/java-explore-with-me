@@ -2,6 +2,7 @@ package ru.practicum.main.dto;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -21,7 +22,10 @@ public class UpdateEventAdminRequest {
     private LocalDateTime eventDate;
     private Location location;
     private Boolean paid;
+
+    @PositiveOrZero
     private Integer participantLimit;
+
     private Boolean requestModeration;
     private String stateAction;
     private String title;
@@ -48,29 +52,28 @@ public class UpdateEventAdminRequest {
         this.requestModeration = convertToBoolean(requestModeration);
         this.stateAction = stateAction;
         this.title = title;
+
+        if (this.participantLimit != null && this.participantLimit < 0) {
+            throw new IllegalArgumentException("Лимит участников не может быть отрицательным");
+        }
+        if (this.participantLimit != null && this.participantLimit > 10000) {
+            throw new IllegalArgumentException("Лимит участников не может превышать 10000");
+        }
     }
 
     private Boolean convertToBoolean(Object value) {
         if (value == null) return null;
         if (value instanceof Boolean) return (Boolean) value;
-        if (value instanceof Number) {
-            return ((Number) value).intValue() != 0;
-        }
         if (value instanceof String) {
             String str = ((String) value).trim().toLowerCase();
-            if ("true".equals(str) || "false".equals(str)) {
-                return Boolean.valueOf(str);
-            }
-            return null;
+            return "true".equals(str) || "false".equals(str) ? Boolean.valueOf(str) : null;
         }
         return null;
     }
 
     private Integer convertToInteger(Object value) {
         if (value == null) return null;
-        if (value instanceof Number) {
-            return ((Number) value).intValue();
-        }
+        if (value instanceof Integer) return (Integer) value;
         if (value instanceof String) {
             try {
                 return Integer.parseInt((String) value);

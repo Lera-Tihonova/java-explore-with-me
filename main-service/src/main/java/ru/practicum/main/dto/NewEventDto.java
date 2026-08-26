@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -39,6 +40,7 @@ public class NewEventDto {
 
     private Boolean paid;
 
+    @PositiveOrZero
     private Integer participantLimit;
 
     private Boolean requestModeration;
@@ -67,29 +69,22 @@ public class NewEventDto {
         this.participantLimit = convertToInteger(participantLimit);
         this.requestModeration = convertToBoolean(requestModeration);
         this.title = title;
+        // ВАЛИДАЦИЯ УДАЛЕНА — ОСТАВЛЕНА ТОЛЬКО В EventServiceImpl
     }
 
     private Boolean convertToBoolean(Object value) {
         if (value == null) return null;
         if (value instanceof Boolean) return (Boolean) value;
-        if (value instanceof Number) {
-            return ((Number) value).intValue() != 0;
-        }
         if (value instanceof String) {
             String str = ((String) value).trim().toLowerCase();
-            if ("true".equals(str) || "false".equals(str)) {
-                return Boolean.valueOf(str);
-            }
-            return null;
+            return "true".equals(str) || "false".equals(str) ? Boolean.valueOf(str) : null;
         }
         return null;
     }
 
     private Integer convertToInteger(Object value) {
         if (value == null) return null;
-        if (value instanceof Number) {
-            return ((Number) value).intValue();
-        }
+        if (value instanceof Integer) return (Integer) value;
         if (value instanceof String) {
             try {
                 return Integer.parseInt((String) value);

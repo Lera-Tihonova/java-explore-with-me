@@ -21,8 +21,6 @@ import ru.practicum.stats.client.StatsClient;
 import ru.practicum.stats.dto.ViewStatsDto;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -42,6 +40,13 @@ public class EventServiceImpl implements EventService {
     @Transactional
     public EventFullDto createEvent(Long userId, NewEventDto request) {
         log.info("Создание события пользователем userId={}", userId);
+
+        if (request.getParticipantLimit() != null && request.getParticipantLimit() < 0) {
+            throw new IllegalArgumentException("Лимит участников не может быть отрицательным");
+        }
+        if (request.getParticipantLimit() != null && request.getParticipantLimit() > 10000) {
+            throw new IllegalArgumentException("Лимит участников не может превышать 10000");
+        }
 
         User initiator = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("Пользователь с id " + userId + " не найден"));
@@ -112,6 +117,14 @@ public class EventServiceImpl implements EventService {
     public EventFullDto updateEventByUser(Long userId, Long eventId, UpdateEventUserRequest request) {
         log.info("Обновление события userId={}, eventId={}", userId, eventId);
 
+        // ========== ВАЛИДАЦИЯ ==========
+        if (request.getParticipantLimit() != null && request.getParticipantLimit() < 0) {
+            throw new IllegalArgumentException("Лимит участников не может быть отрицательным");
+        }
+        if (request.getParticipantLimit() != null && request.getParticipantLimit() > 10000) {
+            throw new IllegalArgumentException("Лимит участников не может превышать 10000");
+        }
+
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new NotFoundException("Событие с id " + eventId + " не найдено"));
 
@@ -128,7 +141,6 @@ public class EventServiceImpl implements EventService {
             throw new IllegalArgumentException("Дата события должна быть не раньше чем через 2 часа");
         }
 
-        // Обновление полей
         if (request.getAnnotation() != null) {
             event.setAnnotation(request.getAnnotation());
         }
@@ -207,6 +219,14 @@ public class EventServiceImpl implements EventService {
     @Transactional
     public EventFullDto updateEventByAdmin(Long eventId, UpdateEventAdminRequest request) {
         log.info("Обновление события администратором eventId={}", eventId);
+
+        // ========== ВАЛИДАЦИЯ ==========
+        if (request.getParticipantLimit() != null && request.getParticipantLimit() < 0) {
+            throw new IllegalArgumentException("Лимит участников не может быть отрицательным");
+        }
+        if (request.getParticipantLimit() != null && request.getParticipantLimit() > 10000) {
+            throw new IllegalArgumentException("Лимит участников не может превышать 10000");
+        }
 
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new NotFoundException("Событие с id " + eventId + " не найдено"));
