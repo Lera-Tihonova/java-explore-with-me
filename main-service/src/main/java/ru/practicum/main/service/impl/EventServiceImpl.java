@@ -10,6 +10,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.main.dto.*;
+import ru.practicum.main.exception.ConflictException;
 import ru.practicum.main.exception.NotFoundException;
 import ru.practicum.main.mapper.EventMapper;
 import ru.practicum.main.model.*;
@@ -42,7 +43,6 @@ public class EventServiceImpl implements EventService {
     public EventFullDto createEvent(Long userId, NewEventDto request) {
         log.info("Создание события пользователем userId={}", userId);
 
-        // ========== ВАЛИДАЦИЯ ==========
         if (request.getParticipantLimit() != null && request.getParticipantLimit() < 0) {
             throw new IllegalArgumentException("Лимит участников не может быть отрицательным");
         }
@@ -119,7 +119,6 @@ public class EventServiceImpl implements EventService {
     public EventFullDto updateEventByUser(Long userId, Long eventId, UpdateEventUserRequest request) {
         log.info("Обновление события userId={}, eventId={}", userId, eventId);
 
-        // ========== ВАЛИДАЦИЯ ==========
         if (request.getParticipantLimit() != null && request.getParticipantLimit() < 0) {
             throw new IllegalArgumentException("Лимит участников не может быть отрицательным");
         }
@@ -148,7 +147,6 @@ public class EventServiceImpl implements EventService {
         if (request.getEventDate() != null && request.getEventDate().isBefore(LocalDateTime.now())) {
             throw new IllegalArgumentException("Дата события не может быть в прошлом");
         }
-        // ===============================
 
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new NotFoundException("Событие с id " + eventId + " не найдено"));
@@ -166,7 +164,6 @@ public class EventServiceImpl implements EventService {
             throw new IllegalArgumentException("Дата события должна быть не раньше чем через 2 часа");
         }
 
-        // Обновление полей
         if (request.getAnnotation() != null) {
             event.setAnnotation(request.getAnnotation());
         }
@@ -319,20 +316,25 @@ public class EventServiceImpl implements EventService {
             event.setTitle(request.getTitle());
         }
 
+        // ========== ИСПРАВЛЕННАЯ ЛОГИКА ПУБЛИКАЦИИ ==========
         if (request.getStateAction() != null) {
             if (request.getStateAction().equals("PUBLISH_EVENT")) {
+                if (event.getState() == EventState.PUBLISHED) {
+                    throw new ConflictException("Событие уже опубликовано");
+                }
                 if (event.getState() != EventState.PENDING) {
-                    throw new IllegalArgumentException("Событие можно опубликовать только в статусе PENDING");
+                    throw new ConflictException("Событие можно опубликовать только в статусе PENDING");
                 }
                 event.setState(EventState.PUBLISHED);
                 event.setPublishedOn(LocalDateTime.now());
             } else if (request.getStateAction().equals("REJECT_EVENT")) {
                 if (event.getState() == EventState.PUBLISHED) {
-                    throw new IllegalArgumentException("Нельзя отклонить опубликованное событие");
+                    throw new ConflictException("Нельзя отклонить опубликованное событие");
                 }
                 event.setState(EventState.CANCELED);
             }
         }
+        // =================================================
 
         Event updatedEvent = eventRepository.save(event);
         Long confirmed = requestRepository.countConfirmedByEventId(eventId);
