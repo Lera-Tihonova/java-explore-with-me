@@ -20,14 +20,14 @@ public class Event {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 2000)  // Вместо @Lob
+    @Column(nullable = false, length = 2000)  // Убрали @Lob
     private String annotation;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id", nullable = false)
     private Category category;
 
-    @Column(nullable = false, length = 7000)  // Вместо @Lob
+    @Column(nullable = false, length = 7000)  // Убрали @Lob
     private String description;
 
     @Column(name = "event_date", nullable = false)

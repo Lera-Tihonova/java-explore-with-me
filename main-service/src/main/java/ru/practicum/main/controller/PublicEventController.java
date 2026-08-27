@@ -33,11 +33,10 @@ public class PublicEventController {
             @RequestParam(defaultValue = "false") Boolean onlyAvailable,
             @RequestParam(required = false) String sort,
             @RequestParam(defaultValue = "0") int from,
-            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "10") int size,  // ← defaultValue = "10"
             HttpServletRequest request) {
         log.info("GET /events - получение событий с фильтрацией");
 
-        // Сохраняем статистику для списка событий
         saveStats("/events", request);
 
         return eventService.getEventsForPublic(text, categories, paid, rangeStart, rangeEnd, onlyAvailable, sort, from, size);
@@ -49,7 +48,6 @@ public class PublicEventController {
             HttpServletRequest request) {
         log.info("GET /events/{} - получение подробной информации о событии", id);
 
-        // Сохраняем статистику для конкретного события
         saveStats("/events/" + id, request);
 
         return eventService.getEventForPublic(id);

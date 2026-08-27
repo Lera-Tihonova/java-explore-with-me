@@ -354,18 +354,16 @@ public class EventServiceImpl implements EventService {
             rangeEnd = LocalDateTime.now().plusYears(100);
         }
 
-        log.info("Параметры поиска: text='{}', categories={}, paid={}, rangeStart={}, rangeEnd={}, onlyAvailable={}, sort={}, from={}, size={}",
-                text, categories, paid, rangeStart, rangeEnd, onlyAvailable, sort, from, size);
+        Pageable pageable = PageRequest.of(from / size, size);
 
-        // Обработка сортировки
-        Sort sortObj = Sort.by("eventDate").ascending();
-        if (sort != null && sort.equalsIgnoreCase("EVENT_DATE")) {
-            sortObj = Sort.by("eventDate").ascending();
-        } else if (sort != null && sort.equalsIgnoreCase("VIEWS")) {
-            sortObj = Sort.by("eventDate").ascending(); // Временное решение, т.к. views вычисляется динамически
+        if (sort != null && !sort.isEmpty()) {
+            if (sort.equalsIgnoreCase("EVENT_DATE")) {
+                pageable = PageRequest.of(from / size, size, Sort.by("eventDate").ascending());
+            }
         }
 
-        Pageable pageable = PageRequest.of(from / size, size, sortObj);
+        log.info("Параметры поиска: text='{}', categories={}, paid={}, rangeStart={}, rangeEnd={}, onlyAvailable={}, sort={}, from={}, size={}",
+                text, categories, paid, rangeStart, rangeEnd, onlyAvailable, sort, from, size);
 
         Page<Event> events = eventRepository.findAllByPublic(
                 text,
@@ -420,12 +418,16 @@ public class EventServiceImpl implements EventService {
     private Long getViewsCount(Long eventId) {
         try {
             List<ViewStatsDto> stats = statsClient.getStats(
-                    LocalDateTime.now().minusYears(100),
+                    LocalDateTime.now().minusMonths(1),
                     LocalDateTime.now(),
-                    List.of("/events/" + eventId),
+                    null,
                     false
             );
-            return stats.isEmpty() ? 0L : stats.get(0).getHits();
+            return stats.stream()
+                    .filter(s -> s.getUri() != null && s.getUri().equals("/events/" + eventId))
+                    .map(ViewStatsDto::getHits)
+                    .findFirst()
+                    .orElse(0L);
         } catch (Exception e) {
             log.warn("Не удалось получить статистику для события {}", eventId);
             return 0L;
