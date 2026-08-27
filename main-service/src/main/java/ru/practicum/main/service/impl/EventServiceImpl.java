@@ -367,6 +367,12 @@ public class EventServiceImpl implements EventService {
             searchText = text.trim();
         }
 
+        // Если текст слишком длинный — обрезаем
+        if (searchText != null && searchText.length() > 200) {
+            log.warn("Текст поиска слишком длинный ({} символов), обрезаем до 200", searchText.length());
+            searchText = searchText.substring(0, 200);
+        }
+
         log.info("searchText после обработки: '{}'", searchText);
         log.info("categoriesStr после обработки: '{}'", categoriesStr);
 
@@ -381,6 +387,11 @@ public class EventServiceImpl implements EventService {
         );
 
         log.info("Найдено событий: {}", events.getTotalElements());
+
+        if (events.isEmpty()) {
+            log.warn("События не найдены. Проверьте условия поиска.");
+            return List.of();
+        }
 
         return events.stream()
                 .map(event -> {
@@ -406,7 +417,7 @@ public class EventServiceImpl implements EventService {
             EndpointHitDto hitDto = EndpointHitDto.builder()
                     .app("ewm-main-service")
                     .uri("/events/" + eventId)
-                    .ip("0:0:0:0:0:0:0:1")
+                    .ip("127.0.0.1")
                     .timestamp(LocalDateTime.now())
                     .build();
             statsClient.hit(hitDto);
