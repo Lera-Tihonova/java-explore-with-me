@@ -36,7 +36,6 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
     public ParticipationRequestDto createRequest(Long userId, Long eventId) {
         log.info("Создание запроса на участие userId={}, eventId={}", userId, eventId);
 
-        // ========== ЗАМЕЧАНИЕ РЕВЬЮЕРА №2: ПРОВЕРКА eventId ==========
         if (eventId == null) {
             throw new IllegalArgumentException("eventId обязателен для создания запроса");
         }
@@ -65,12 +64,13 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
             throw new ConflictException("Достигнут лимит участников");
         }
 
-        // ========== ЗАМЕЧАНИЕ РЕВЬЮЕРА №3: СТАТУС CONFIRMED ПРИ participantLimit == 0 ==========
         String status;
         if (event.getParticipantLimit() == 0) {
             status = "CONFIRMED";
+        } else if (!event.getRequestModeration()) {
+            status = "CONFIRMED";
         } else {
-            status = event.getRequestModeration() ? "PENDING" : "CONFIRMED";
+            status = "PENDING";
         }
 
         ParticipationRequest request = ParticipationRequest.builder()
@@ -81,6 +81,7 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
                 .build();
 
         ParticipationRequest saved = requestRepository.save(request);
+        log.info("Создан запрос на участие id={}, статус={}", saved.getId(), saved.getStatus());
         return ParticipationRequestMapper.toDto(saved);
     }
 
@@ -115,6 +116,7 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
 
         request.setStatus("CANCELED");
         ParticipationRequest updated = requestRepository.save(request);
+        log.info("Запрос id={} отменён", updated.getId());
         return ParticipationRequestMapper.toDto(updated);
     }
 
@@ -138,7 +140,7 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
     @Transactional
     public EventRequestStatusUpdateResult updateRequestStatus(Long userId, Long eventId,
                                                               EventRequestStatusUpdateRequest request) {
-        log.info("Обновление статуса запросов userId={}, eventId={}", userId, eventId);
+        log.info("Обновление статуса запросов userId={}, eventId={}, status={}", userId, eventId, request.getStatus());
 
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new NotFoundException("Событие с id " + eventId + " не найдено"));
@@ -160,6 +162,7 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
         Long confirmedCount = requestRepository.countConfirmedByEventId(eventId);
         List<ParticipationRequest> confirmedRequests = new ArrayList<>();
         List<ParticipationRequest> rejectedRequests = new ArrayList<>();
+        List<ParticipationRequest> allRequestsToSave = new ArrayList<>();
 
         for (ParticipationRequest pr : requests) {
             if (!pr.getStatus().equals("PENDING")) {
@@ -182,8 +185,10 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
                 pr.setStatus("REJECTED");
                 rejectedRequests.add(pr);
             }
+            allRequestsToSave.add(pr);
         }
 
+        // Если статус CONFIRMED и лимит достигнут — отклоняем все оставшиеся PENDING запросы
         if (request.getStatus().equals("CONFIRMED") &&
                 event.getParticipantLimit() > 0 &&
                 confirmedCount >= event.getParticipantLimit()) {
@@ -195,10 +200,14 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
             for (ParticipationRequest r : remaining) {
                 r.setStatus("REJECTED");
                 rejectedRequests.add(r);
+                allRequestsToSave.add(r);
             }
         }
 
-        requestRepository.saveAll(requests);
+        // Сохраняем ВСЕ изменённые запросы
+        requestRepository.saveAll(allRequestsToSave);
+        log.info("Обновлены статусы запросов: подтверждено={}, отклонено={}",
+                confirmedRequests.size(), rejectedRequests.size());
 
         return EventRequestStatusUpdateResult.builder()
                 .confirmedRequests(confirmedRequests.stream()
