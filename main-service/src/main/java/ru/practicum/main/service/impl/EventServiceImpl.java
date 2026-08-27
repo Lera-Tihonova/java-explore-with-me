@@ -362,8 +362,16 @@ public class EventServiceImpl implements EventService {
                 ? categories.stream().map(String::valueOf).collect(Collectors.joining(","))
                 : null;
 
+        String searchText = null;
+        if (text != null && !text.trim().isEmpty()) {
+            searchText = text.trim();
+        }
+
+        log.info("searchText после обработки: '{}'", searchText);
+        log.info("categoriesStr после обработки: '{}'", categoriesStr);
+
         Page<Event> events = eventRepository.findAllByPublicNative(
-                text,
+                searchText,
                 categoriesStr,
                 paid,
                 rangeStart,
@@ -398,7 +406,7 @@ public class EventServiceImpl implements EventService {
             EndpointHitDto hitDto = EndpointHitDto.builder()
                     .app("ewm-main-service")
                     .uri("/events/" + eventId)
-                    .ip("0:0:0:0:0:0:0:1")
+                    .ip("127.0.0.1")
                     .timestamp(LocalDateTime.now())
                     .build();
             statsClient.hit(hitDto);
