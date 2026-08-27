@@ -406,11 +406,11 @@ public class EventServiceImpl implements EventService {
             EndpointHitDto hitDto = EndpointHitDto.builder()
                     .app("ewm-main-service")
                     .uri("/events/" + eventId)
-                    .ip("127.0.0.1")
+                    .ip("0:0:0:0:0:0:0:1")
                     .timestamp(LocalDateTime.now())
                     .build();
             statsClient.hit(hitDto);
-            log.info("Статистика сохранена из сервиса для события {}", eventId);
+            log.info("Статистика сохранена для события {}", eventId);
         } catch (Exception e) {
             log.warn("Не удалось сохранить статистику для события {}", eventId, e);
         }
