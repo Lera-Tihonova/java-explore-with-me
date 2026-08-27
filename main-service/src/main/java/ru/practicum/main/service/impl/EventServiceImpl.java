@@ -367,39 +367,33 @@ public class EventServiceImpl implements EventService {
             searchText = text.trim();
         }
 
-        // Если текст слишком длинный — обрезаем
-        if (searchText != null && searchText.length() > 200) {
-            log.warn("Текст поиска слишком длинный ({} символов), обрезаем до 200", searchText.length());
-            searchText = searchText.substring(0, 200);
-        }
-
         log.info("searchText после обработки: '{}'", searchText);
         log.info("categoriesStr после обработки: '{}'", categoriesStr);
 
-        Page<Event> events = eventRepository.findAllByPublicNative(
-                searchText,
-                categoriesStr,
-                paid,
-                rangeStart,
-                rangeEnd,
-                onlyAvailable != null && onlyAvailable,
-                pageable
-        );
+        try {
+            Page<Event> events = eventRepository.findAllByPublicNative(
+                    searchText,
+                    categoriesStr,
+                    paid,
+                    rangeStart,
+                    rangeEnd,
+                    onlyAvailable != null && onlyAvailable,
+                    pageable
+            );
 
-        log.info("Найдено событий: {}", events.getTotalElements());
+            log.info("Найдено событий: {}", events.getTotalElements());
 
-        if (events.isEmpty()) {
-            log.warn("События не найдены. Проверьте условия поиска.");
+            return events.stream()
+                    .map(event -> {
+                        Long confirmed = requestRepository.countConfirmedByEventId(event.getId());
+                        Long views = getViewsCount(event.getId());
+                        return EventMapper.toShortDto(event, confirmed, views);
+                    })
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("Ошибка при поиске событий: {}", e.getMessage(), e);
             return List.of();
         }
-
-        return events.stream()
-                .map(event -> {
-                    Long confirmed = requestRepository.countConfirmedByEventId(event.getId());
-                    Long views = getViewsCount(event.getId());
-                    return EventMapper.toShortDto(event, confirmed, views);
-                })
-                .collect(Collectors.toList());
     }
 
     @Override
