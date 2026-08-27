@@ -46,12 +46,6 @@ services:
       - SPRING_DATASOURCE_USERNAME=postgres
       - SPRING_DATASOURCE_PASSWORD=postgres
       - SERVER_PORT=9090
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9090/actuator/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 20
-      start_period: 20s
 
   main-service:
     build: ./main-service
@@ -69,12 +63,6 @@ services:
       - SPRING_DATASOURCE_PASSWORD=postgres
       - STATS_SERVER_URL=http://stats-server:9090
       - SERVER_PORT=8080
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 30
-      start_period: 40s
 
 volumes:
   stats-db-data:
