@@ -18,6 +18,7 @@ import ru.practicum.main.repository.ParticipationRequestRepository;
 import ru.practicum.main.repository.UserRepository;
 import ru.practicum.main.service.EventService;
 import ru.practicum.stats.client.StatsClient;
+import ru.practicum.stats.dto.EndpointHitDto;
 import ru.practicum.stats.dto.ViewStatsDto;
 
 import java.time.LocalDateTime;
@@ -387,6 +388,21 @@ public class EventServiceImpl implements EventService {
         if (event.getState() != EventState.PUBLISHED) {
             throw new NotFoundException("Событие не опубликовано");
         }
+
+        // ========== ЯВНО СОХРАНЯЕМ СТАТИСТИКУ ==========
+        try {
+            EndpointHitDto hitDto = EndpointHitDto.builder()
+                    .app("ewm-main-service")
+                    .uri("/events/" + eventId)
+                    .ip("127.0.0.1")
+                    .timestamp(LocalDateTime.now())
+                    .build();
+            statsClient.hit(hitDto);
+            log.info("Статистика сохранена из сервиса для события {}", eventId);
+        } catch (Exception e) {
+            log.warn("Не удалось сохранить статистику для события {}", eventId, e);
+        }
+        // ==============================================
 
         Long confirmed = requestRepository.countConfirmedByEventId(eventId);
         Long views = getViewsCount(eventId);

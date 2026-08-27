@@ -33,9 +33,6 @@ public class StatsClient {
         this.restTemplate = new RestTemplate();
     }
 
-    /**
-     * Сохранение информации о запросе к эндпоинту
-     */
     public void hit(EndpointHitDto hitDto) {
         log.info("Отправка статистики: app={}, uri={}, ip={}", hitDto.getApp(), hitDto.getUri(), hitDto.getIp());
 
@@ -56,20 +53,18 @@ public class StatsClient {
                 log.info("Статистика успешно отправлена");
             } else {
                 log.error("Ошибка при отправке статистики: {}", response.getStatusCode());
+                throw new RuntimeException("Ошибка отправки статистики: " + response.getStatusCode());
             }
         } catch (Exception e) {
             log.error("Ошибка при вызове сервиса статистики: {}", e.getMessage(), e);
+            throw new RuntimeException("Не удалось сохранить статистику", e);
         }
     }
 
-    /**
-     * Получение статистики за период
-     */
     public List<ViewStatsDto> getStats(LocalDateTime start, LocalDateTime end, List<String> uris, Boolean unique) {
         log.info("Запрос статистики: start={}, end={}, uris={}, unique={}", start, end, uris, unique);
 
         try {
-            // Кодируем даты согласно спецификации
             String encodedStart = URLEncoder.encode(start.format(FORMATTER), StandardCharsets.UTF_8);
             String encodedEnd = URLEncoder.encode(end.format(FORMATTER), StandardCharsets.UTF_8);
 

@@ -55,11 +55,6 @@ public class PublicEventController {
         return eventService.getEventForPublic(id);
     }
 
-    /**
-     * Сохранение статистики о запросе
-     * @param uri URI запроса (например, "/events" или "/events/1")
-     * @param request HTTP-запрос для получения IP-адреса
-     */
     private void saveStats(String uri, HttpServletRequest request) {
         try {
             EndpointHitDto hitDto = EndpointHitDto.builder()
@@ -69,7 +64,7 @@ public class PublicEventController {
                     .timestamp(LocalDateTime.now())
                     .build();
             statsClient.hit(hitDto);
-            log.debug("Статистика сохранена: uri={}, ip={}", uri, request.getRemoteAddr());
+            log.info("Статистика сохранена: uri={}, ip={}", uri, request.getRemoteAddr());
         } catch (Exception e) {
             log.warn("Не удалось сохранить статистику для запроса {}", uri, e);
         }
