@@ -354,7 +354,6 @@ public class EventServiceImpl implements EventService {
 
         Pageable pageable = PageRequest.of(from / size, size);
 
-        // Преобразуем список категорий в строку через запятую
         String categoriesStr = categories != null && !categories.isEmpty()
                 ? categories.stream().map(String::valueOf).collect(Collectors.joining(","))
                 : null;
