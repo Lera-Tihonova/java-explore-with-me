@@ -370,35 +370,25 @@ public class EventServiceImpl implements EventService {
         log.info("searchText после обработки: '{}'", searchText);
         log.info("categoriesStr после обработки: '{}'", categoriesStr);
 
-        try {
-            Page<Event> events = eventRepository.findAllByPublicNative(
-                    searchText,
-                    categoriesStr,
-                    paid,
-                    rangeStart,
-                    rangeEnd,
-                    onlyAvailable != null && onlyAvailable,
-                    pageable
-            );
+        Page<Event> events = eventRepository.findAllByPublicNative(
+                searchText,
+                categoriesStr,
+                paid,
+                rangeStart,
+                rangeEnd,
+                onlyAvailable != null && onlyAvailable,
+                pageable
+        );
 
-            log.info("Найдено событий: {}", events.getTotalElements());
+        log.info("Найдено событий: {}", events.getTotalElements());
 
-            if (events.isEmpty()) {
-                log.warn("События не найдены. Проверьте условия поиска.");
-                return List.of();
-            }
-
-            return events.stream()
-                    .map(event -> {
-                        Long confirmed = requestRepository.countConfirmedByEventId(event.getId());
-                        Long views = getViewsCount(event.getId());
-                        return EventMapper.toShortDto(event, confirmed, views);
-                    })
-                    .collect(Collectors.toList());
-        } catch (Exception e) {
-            log.error("Ошибка при поиске событий: {}", e.getMessage(), e);
-            return List.of();
-        }
+        return events.stream()
+                .map(event -> {
+                    Long confirmed = requestRepository.countConfirmedByEventId(event.getId());
+                    Long views = getViewsCount(event.getId());
+                    return EventMapper.toShortDto(event, confirmed, views);
+                })
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -416,7 +406,7 @@ public class EventServiceImpl implements EventService {
             EndpointHitDto hitDto = EndpointHitDto.builder()
                     .app("ewm-main-service")
                     .uri("/events/" + eventId)
-                    .ip("127.0.0.1")
+                    .ip("0:0:0:0:0:0:0:1")
                     .timestamp(LocalDateTime.now())
                     .build();
             statsClient.hit(hitDto);
