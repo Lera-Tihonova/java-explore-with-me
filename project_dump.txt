@@ -257,12 +257,10 @@ public class EventShortDto {
     private Long id;
     private String annotation;
     private CategoryDto category;
-    private Long confirmedRequests;
     private LocalDateTime eventDate;
     private UserShortDto initiator;
     private Boolean paid;
     private String title;
-    private Long views;
 }
 === ./main-service/src/main/java/ru/practicum/main/dto/NewCompilationDto.java ===
 package ru.practicum.main.dto;
@@ -956,17 +954,15 @@ public class EventMapper {
                 .build();
     }
 
-    public static EventShortDto toShortDto(Event event, Long confirmedRequests, Long views) {
+    public static EventShortDto toShortDto(Event event) {
         return EventShortDto.builder()
                 .id(event.getId())
                 .annotation(event.getAnnotation())
                 .category(CategoryMapper.toDto(event.getCategory()))
-                .confirmedRequests(confirmedRequests)
                 .eventDate(event.getEventDate())
                 .initiator(UserMapper.toShortDto(event.getInitiator()))
                 .paid(event.getPaid())
                 .title(event.getTitle())
-                .views(views)
                 .build();
     }
 }
@@ -2215,7 +2211,7 @@ public class EventServiceImpl implements EventService {
                 .map(event -> {
                     Long confirmed = requestRepository.countConfirmedByEventId(event.getId());
                     Long views = getViewsCount(event.getId());
-                    return EventMapper.toShortDto(event, confirmed, views);
+                    return EventMapper.toFullDto(event, confirmed, views);
                 })
                 .collect(Collectors.toList());
     }
@@ -2493,11 +2489,7 @@ public class EventServiceImpl implements EventService {
         );
 
         return events.stream()
-                .map(event -> {
-                    Long confirmed = requestRepository.countConfirmedByEventId(event.getId());
-                    Long views = getViewsCount(event.getId());
-                    return EventMapper.toShortDto(event, confirmed, views);
-                })
+                .map(EventMapper::toShortDto)
                 .collect(Collectors.toList());
     }
 
@@ -2512,7 +2504,6 @@ public class EventServiceImpl implements EventService {
             throw new NotFoundException("Событие не опубликовано");
         }
 
-        // ========== ЯВНО СОХРАНЯЕМ СТАТИСТИКУ ==========
         try {
             EndpointHitDto hitDto = EndpointHitDto.builder()
                     .app("ewm-main-service")
@@ -2525,7 +2516,6 @@ public class EventServiceImpl implements EventService {
         } catch (Exception e) {
             log.warn("Не удалось сохранить статистику для события {}", eventId, e);
         }
-        // ==============================================
 
         Long confirmed = requestRepository.countConfirmedByEventId(eventId);
         Long views = getViewsCount(eventId);
@@ -3960,7 +3950,7 @@ public class ErrorHandler {
   </component>
   <component name="ChangeListManager">
     <list default="true" id="9b799640-21fc-4fa9-8399-91b8bc36c86f" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/main-service/src/main/java/ru/practicum/main/controller/PublicEventController.java" beforeDir="false" afterPath="$PROJECT_DIR$/main-service/src/main/java/ru/practicum/main/controller/PublicEventController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main-service/src/main/java/ru/practicum/main/dto/EventShortDto.java" beforeDir="false" afterPath="$PROJECT_DIR$/main-service/src/main/java/ru/practicum/main/dto/EventShortDto.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

@@ -88,12 +88,11 @@ public class EventServiceImpl implements EventService {
         Pageable pageable = PageRequest.of(from / size, size);
         Page<Event> events = eventRepository.findByInitiatorId(userId, pageable);
 
+        // ВАЖНО: для приватного эндпоинта возвращаем EventShortDto,
+        // но в спецификации для /users/{userId}/events тоже используется EventShortDto
+        // Поэтому здесь нужно использовать toShortDto, а не toFullDto
         return events.stream()
-                .map(event -> {
-                    Long confirmed = requestRepository.countConfirmedByEventId(event.getId());
-                    Long views = getViewsCount(event.getId());
-                    return EventMapper.toShortDto(event, confirmed, views);
-                })
+                .map(EventMapper::toShortDto)
                 .collect(Collectors.toList());
     }
 
@@ -370,11 +369,7 @@ public class EventServiceImpl implements EventService {
         );
 
         return events.stream()
-                .map(event -> {
-                    Long confirmed = requestRepository.countConfirmedByEventId(event.getId());
-                    Long views = getViewsCount(event.getId());
-                    return EventMapper.toShortDto(event, confirmed, views);
-                })
+                .map(EventMapper::toShortDto)
                 .collect(Collectors.toList());
     }
 
@@ -389,7 +384,6 @@ public class EventServiceImpl implements EventService {
             throw new NotFoundException("Событие не опубликовано");
         }
 
-        // ========== ЯВНО СОХРАНЯЕМ СТАТИСТИКУ ==========
         try {
             EndpointHitDto hitDto = EndpointHitDto.builder()
                     .app("ewm-main-service")
@@ -402,7 +396,6 @@ public class EventServiceImpl implements EventService {
         } catch (Exception e) {
             log.warn("Не удалось сохранить статистику для события {}", eventId, e);
         }
-        // ==============================================
 
         Long confirmed = requestRepository.countConfirmedByEventId(eventId);
         Long views = getViewsCount(eventId);
