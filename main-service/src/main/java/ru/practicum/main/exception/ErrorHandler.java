@@ -60,6 +60,11 @@ public class ErrorHandler {
     @ResponseStatus(HttpStatus.CONFLICT)
     public ErrorResponse handleDataIntegrityViolation(DataIntegrityViolationException e) {
         log.error("Нарушение целостности данных: {}", e.getMessage(), e);
+        // Проверяем, связано ли нарушение с длиной строки (для подборок и категорий)
+        String message = e.getMessage();
+        if (message != null && message.contains("length")) {
+            return ErrorResponse.badRequest("Превышена допустимая длина поля");
+        }
         return ErrorResponse.conflict("Нарушение целостности данных");
     }
 

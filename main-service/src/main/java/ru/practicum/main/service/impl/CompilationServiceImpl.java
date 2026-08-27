@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.main.dto.CompilationDto;
 import ru.practicum.main.dto.NewCompilationDto;
 import ru.practicum.main.dto.UpdateCompilationRequest;
+import ru.practicum.main.exception.ConflictException;
 import ru.practicum.main.exception.NotFoundException;
 import ru.practicum.main.mapper.CompilationMapper;
 import ru.practicum.main.model.Compilation;
@@ -53,6 +54,11 @@ public class CompilationServiceImpl implements CompilationService {
 
         Compilation compilation = compilationRepository.findById(compId)
                 .orElseThrow(() -> new NotFoundException("Подборка с id " + compId + " не найдена"));
+
+        // Валидация длины названия — если title передан и его длина > 50
+        if (request.getTitle() != null && request.getTitle().length() > 50) {
+            throw new IllegalArgumentException("Заголовок подборки не может превышать 50 символов");
+        }
 
         if (request.getTitle() != null) {
             compilation.setTitle(request.getTitle());
