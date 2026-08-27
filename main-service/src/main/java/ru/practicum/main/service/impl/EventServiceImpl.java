@@ -383,6 +383,11 @@ public class EventServiceImpl implements EventService {
 
             log.info("Найдено событий: {}", events.getTotalElements());
 
+            if (events.isEmpty()) {
+                log.warn("События не найдены. Проверьте условия поиска.");
+                return List.of();
+            }
+
             return events.stream()
                     .map(event -> {
                         Long confirmed = requestRepository.countConfirmedByEventId(event.getId());
