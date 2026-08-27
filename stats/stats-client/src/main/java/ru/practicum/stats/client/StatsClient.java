@@ -53,11 +53,9 @@ public class StatsClient {
                 log.info("Статистика успешно отправлена");
             } else {
                 log.error("Ошибка при отправке статистики: {}", response.getStatusCode());
-                throw new RuntimeException("Ошибка отправки статистики: " + response.getStatusCode());
             }
         } catch (Exception e) {
             log.error("Ошибка при вызове сервиса статистики: {}", e.getMessage(), e);
-            throw new RuntimeException("Не удалось сохранить статистику", e);
         }
     }
 

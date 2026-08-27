@@ -35,14 +35,14 @@ public interface EventRepository extends JpaRepository<Event, Long> {
 
     @Query(value = "SELECT * FROM events e " +
             "WHERE e.state = 'PUBLISHED' " +
+            "AND (e.event_date >= CAST(:rangeStart AS TIMESTAMP)) " +
+            "AND (e.event_date <= CAST(:rangeEnd AS TIMESTAMP)) " +
             "AND (:text IS NULL OR " +
-            "     e.annotation ILIKE CONCAT('%', :text, '%') OR " +
-            "     e.description ILIKE CONCAT('%', :text, '%')) " +
+            "     (e.annotation IS NOT NULL AND CAST(e.annotation AS TEXT) ILIKE CONCAT('%', CAST(:text AS TEXT), '%')) OR " +
+            "     (e.description IS NOT NULL AND CAST(e.description AS TEXT) ILIKE CONCAT('%', CAST(:text AS TEXT), '%'))) " +
             "AND (:categories IS NULL OR " +
-            "     e.category_id = ANY(STRING_TO_ARRAY(:categories, ','))) " +
-            "AND (:paid IS NULL OR e.paid = :paid) " +
-            "AND e.event_date >= :rangeStart " +
-            "AND e.event_date <= :rangeEnd " +
+            "     CAST(e.category_id AS TEXT) = ANY(string_to_array(CAST(:categories AS TEXT), ','))) " +
+            "AND (:paid IS NULL OR e.paid = CAST(:paid AS BOOLEAN)) " +
             "AND (:onlyAvailable = false OR " +
             "     e.participant_limit = 0 OR " +
             "     (SELECT COUNT(*) FROM participation_requests pr " +
@@ -59,14 +59,14 @@ public interface EventRepository extends JpaRepository<Event, Long> {
 
     @Query(value = "SELECT COUNT(*) FROM events e " +
             "WHERE e.state = 'PUBLISHED' " +
+            "AND (e.event_date >= CAST(:rangeStart AS TIMESTAMP)) " +
+            "AND (e.event_date <= CAST(:rangeEnd AS TIMESTAMP)) " +
             "AND (:text IS NULL OR " +
-            "     e.annotation ILIKE CONCAT('%', :text, '%') OR " +
-            "     e.description ILIKE CONCAT('%', :text, '%')) " +
+            "     (e.annotation IS NOT NULL AND CAST(e.annotation AS TEXT) ILIKE CONCAT('%', CAST(:text AS TEXT), '%')) OR " +
+            "     (e.description IS NOT NULL AND CAST(e.description AS TEXT) ILIKE CONCAT('%', CAST(:text AS TEXT), '%'))) " +
             "AND (:categories IS NULL OR " +
-            "     e.category_id = ANY(STRING_TO_ARRAY(:categories, ','))) " +
-            "AND (:paid IS NULL OR e.paid = :paid) " +
-            "AND e.event_date >= :rangeStart " +
-            "AND e.event_date <= :rangeEnd " +
+            "     CAST(e.category_id AS TEXT) = ANY(string_to_array(CAST(:categories AS TEXT), ','))) " +
+            "AND (:paid IS NULL OR e.paid = CAST(:paid AS BOOLEAN)) " +
             "AND (:onlyAvailable = false OR " +
             "     e.participant_limit = 0 OR " +
             "     (SELECT COUNT(*) FROM participation_requests pr " +
