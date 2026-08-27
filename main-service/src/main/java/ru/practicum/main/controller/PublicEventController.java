@@ -33,7 +33,7 @@ public class PublicEventController {
             @RequestParam(defaultValue = "false") Boolean onlyAvailable,
             @RequestParam(required = false) String sort,
             @RequestParam(defaultValue = "0") int from,
-            @RequestParam(defaultValue = "10") int size,  // ← defaultValue = "10"
+            @RequestParam(defaultValue = "10") int size,
             HttpServletRequest request) {
         log.info("GET /events - получение событий с фильтрацией");
 

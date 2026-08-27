@@ -406,6 +406,7 @@ public class EventServiceImpl implements EventService {
                     .build();
             statsClient.hit(hitDto);
             log.info("Статистика сохранена для события {}", eventId);
+            Thread.sleep(100);
         } catch (Exception e) {
             log.warn("Не удалось сохранить статистику для события {}", eventId, e);
         }

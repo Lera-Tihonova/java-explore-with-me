@@ -64,7 +64,6 @@ public class StatsClient {
             String startStr = start.format(FORMATTER);
             String endStr = end.format(FORMATTER);
 
-            // Используем правильный UriComponentsBuilder без двойного кодирования
             UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(serverUrl + "/stats")
                     .queryParam("start", startStr)
                     .queryParam("end", endStr);
@@ -79,7 +78,6 @@ public class StatsClient {
                 builder.queryParam("unique", unique);
             }
 
-            // Ключевое: используем build(false).toUriString() чтобы избежать двойного кодирования
             String url = builder.build(false).toUriString();
             log.info("URL запроса статистики: {}", url);
 
