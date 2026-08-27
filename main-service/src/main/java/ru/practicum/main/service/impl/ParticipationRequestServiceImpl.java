@@ -54,6 +54,7 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
             throw new ConflictException("Нельзя участвовать в неопубликованном событии");
         }
 
+        // Проверка на уже существующий запрос
         if (requestRepository.existsByRequesterIdAndEventIdAndStatus(userId, eventId, "PENDING") ||
                 requestRepository.existsByRequesterIdAndEventIdAndStatus(userId, eventId, "CONFIRMED")) {
             throw new ConflictException("Запрос уже существует");
@@ -188,6 +189,7 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
             allRequestsToSave.add(pr);
         }
 
+        // Если лимит достигнут - отклоняем все оставшиеся PENDING запросы
         if (request.getStatus().equals("CONFIRMED") &&
                 event.getParticipantLimit() > 0 &&
                 confirmedCount >= event.getParticipantLimit()) {

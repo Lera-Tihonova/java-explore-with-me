@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.main.dto.*;
@@ -356,7 +357,15 @@ public class EventServiceImpl implements EventService {
         log.info("Параметры поиска: text='{}', categories={}, paid={}, rangeStart={}, rangeEnd={}, onlyAvailable={}, sort={}, from={}, size={}",
                 text, categories, paid, rangeStart, rangeEnd, onlyAvailable, sort, from, size);
 
-        Pageable pageable = PageRequest.of(from / size, size);
+        // Обработка сортировки
+        Sort sortObj = Sort.by("eventDate").ascending();
+        if (sort != null && sort.equalsIgnoreCase("EVENT_DATE")) {
+            sortObj = Sort.by("eventDate").ascending();
+        } else if (sort != null && sort.equalsIgnoreCase("VIEWS")) {
+            sortObj = Sort.by("eventDate").ascending(); // Временное решение, т.к. views вычисляется динамически
+        }
+
+        Pageable pageable = PageRequest.of(from / size, size, sortObj);
 
         Page<Event> events = eventRepository.findAllByPublic(
                 text,
