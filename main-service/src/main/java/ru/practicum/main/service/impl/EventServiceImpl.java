@@ -342,12 +342,10 @@ public class EventServiceImpl implements EventService {
                                                   Boolean onlyAvailable, String sort, int from, int size) {
         log.info("Получение событий для публичного доступа");
 
-        // Валидация дат
         if (rangeStart != null && rangeEnd != null && rangeStart.isAfter(rangeEnd)) {
             throw new IllegalArgumentException("Дата начала не может быть позже даты окончания");
         }
 
-        // Установка значений по умолчанию
         if (rangeStart == null) {
             rangeStart = LocalDateTime.now();
         }
@@ -355,21 +353,20 @@ public class EventServiceImpl implements EventService {
             rangeEnd = LocalDateTime.now().plusYears(100);
         }
 
-        // Логирование параметров запроса для отладки
         log.info("Параметры поиска: text='{}', categories={}, paid={}, rangeStart={}, rangeEnd={}, onlyAvailable={}, sort={}, from={}, size={}",
                 text, categories, paid, rangeStart, rangeEnd, onlyAvailable, sort, from, size);
 
         Pageable pageable = PageRequest.of(from / size, size);
 
-        // Преобразуем список категорий в строку для native query
         String categoriesStr = categories != null && !categories.isEmpty()
                 ? categories.stream().map(String::valueOf).collect(Collectors.joining(","))
                 : null;
 
-        // Обрезаем текст для поиска
         String searchText = text != null && !text.isEmpty() ? text.trim() : null;
+        if (searchText != null && searchText.isEmpty()) {
+            searchText = null;
+        }
 
-        // Выполняем поиск
         Page<Event> events = eventRepository.findAllByPublicNative(
                 searchText,
                 categoriesStr,
@@ -382,16 +379,10 @@ public class EventServiceImpl implements EventService {
 
         log.info("Найдено событий: {}", events.getTotalElements());
 
-        // Если сортировка по просмотрам — сортируем отдельно (так как native query не может сортировать по views)
-        // В спецификации sort может быть EVENT_DATE или VIEWS
-        // Но сейчас native query уже сортирует по event_date, а для VIEWS нужно будет добавить отдельную логику
-        // Пока оставляем как есть
-
         return events.stream()
                 .map(event -> {
                     Long confirmed = requestRepository.countConfirmedByEventId(event.getId());
                     Long views = getViewsCount(event.getId());
-                    log.debug("Событие id={}, confirmed={}, views={}", event.getId(), confirmed, views);
                     return EventMapper.toShortDto(event, confirmed, views);
                 })
                 .collect(Collectors.toList());

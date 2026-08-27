@@ -188,7 +188,6 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
             allRequestsToSave.add(pr);
         }
 
-        // Если статус CONFIRMED и лимит достигнут — отклоняем все оставшиеся PENDING запросы
         if (request.getStatus().equals("CONFIRMED") &&
                 event.getParticipantLimit() > 0 &&
                 confirmedCount >= event.getParticipantLimit()) {
@@ -204,7 +203,6 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
             }
         }
 
-        // Сохраняем ВСЕ изменённые запросы
         requestRepository.saveAll(allRequestsToSave);
         log.info("Обновлены статусы запросов: подтверждено={}, отклонено={}",
                 confirmedRequests.size(), rejectedRequests.size());

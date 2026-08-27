@@ -35,12 +35,18 @@ public interface EventRepository extends JpaRepository<Event, Long> {
 
     @Query(value = "SELECT * FROM events e " +
             "WHERE e.state = 'PUBLISHED' " +
-            "AND (:text IS NULL OR CAST(e.annotation AS VARCHAR) ILIKE CONCAT('%', CAST(:text AS VARCHAR), '%') OR CAST(e.description AS VARCHAR) ILIKE CONCAT('%', CAST(:text AS VARCHAR), '%')) " +
-            "AND (:categories IS NULL OR CAST(e.category_id AS VARCHAR) = ANY(string_to_array(CAST(:categories AS VARCHAR), ','))) " +
-            "AND (:paid IS NULL OR e.paid = CAST(:paid AS BOOLEAN)) " +
-            "AND (e.event_date >= CAST(:rangeStart AS TIMESTAMP)) " +
-            "AND (e.event_date <= CAST(:rangeEnd AS TIMESTAMP)) " +
-            "AND (:onlyAvailable = false OR e.participant_limit = 0 OR (SELECT COUNT(*) FROM participation_requests pr WHERE pr.event_id = e.id AND pr.status = 'CONFIRMED') < e.participant_limit) " +
+            "AND (:text IS NULL OR " +
+            "     e.annotation ILIKE CONCAT('%', :text, '%') OR " +
+            "     e.description ILIKE CONCAT('%', :text, '%')) " +
+            "AND (:categories IS NULL OR " +
+            "     e.category_id = ANY(STRING_TO_ARRAY(:categories, ','))) " +
+            "AND (:paid IS NULL OR e.paid = :paid) " +
+            "AND e.event_date >= :rangeStart " +
+            "AND e.event_date <= :rangeEnd " +
+            "AND (:onlyAvailable = false OR " +
+            "     e.participant_limit = 0 OR " +
+            "     (SELECT COUNT(*) FROM participation_requests pr " +
+            "      WHERE pr.event_id = e.id AND pr.status = 'CONFIRMED') < e.participant_limit) " +
             "ORDER BY e.event_date ASC",
             nativeQuery = true)
     Page<Event> findAllByPublicNative(@Param("text") String text,
@@ -53,12 +59,18 @@ public interface EventRepository extends JpaRepository<Event, Long> {
 
     @Query(value = "SELECT COUNT(*) FROM events e " +
             "WHERE e.state = 'PUBLISHED' " +
-            "AND (:text IS NULL OR CAST(e.annotation AS VARCHAR) ILIKE CONCAT('%', CAST(:text AS VARCHAR), '%') OR CAST(e.description AS VARCHAR) ILIKE CONCAT('%', CAST(:text AS VARCHAR), '%')) " +
-            "AND (:categories IS NULL OR CAST(e.category_id AS VARCHAR) = ANY(string_to_array(CAST(:categories AS VARCHAR), ','))) " +
-            "AND (:paid IS NULL OR e.paid = CAST(:paid AS BOOLEAN)) " +
-            "AND (e.event_date >= CAST(:rangeStart AS TIMESTAMP)) " +
-            "AND (e.event_date <= CAST(:rangeEnd AS TIMESTAMP)) " +
-            "AND (:onlyAvailable = false OR e.participant_limit = 0 OR (SELECT COUNT(*) FROM participation_requests pr WHERE pr.event_id = e.id AND pr.status = 'CONFIRMED') < e.participant_limit)",
+            "AND (:text IS NULL OR " +
+            "     e.annotation ILIKE CONCAT('%', :text, '%') OR " +
+            "     e.description ILIKE CONCAT('%', :text, '%')) " +
+            "AND (:categories IS NULL OR " +
+            "     e.category_id = ANY(STRING_TO_ARRAY(:categories, ','))) " +
+            "AND (:paid IS NULL OR e.paid = :paid) " +
+            "AND e.event_date >= :rangeStart " +
+            "AND e.event_date <= :rangeEnd " +
+            "AND (:onlyAvailable = false OR " +
+            "     e.participant_limit = 0 OR " +
+            "     (SELECT COUNT(*) FROM participation_requests pr " +
+            "      WHERE pr.event_id = e.id AND pr.status = 'CONFIRMED') < e.participant_limit)",
             nativeQuery = true)
     Long countAllByPublicNative(@Param("text") String text,
                                 @Param("categories") String categories,
