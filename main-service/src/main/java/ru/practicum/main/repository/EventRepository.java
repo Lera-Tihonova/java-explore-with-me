@@ -38,11 +38,11 @@ public interface EventRepository extends JpaRepository<Event, Long> {
             "AND e.event_date >= CAST(:rangeStart AS TIMESTAMP) " +
             "AND e.event_date <= CAST(:rangeEnd AS TIMESTAMP) " +
             "AND (:text IS NULL OR " +
-            "     e.annotation ILIKE CONCAT('%', :text, '%') OR " +
-            "     e.description ILIKE CONCAT('%', :text, '%')) " +
+            "     CAST(e.annotation AS TEXT) ILIKE CONCAT('%', CAST(:text AS TEXT), '%') OR " +
+            "     CAST(e.description AS TEXT) ILIKE CONCAT('%', CAST(:text AS TEXT), '%')) " +
             "AND (:categories IS NULL OR " +
-            "     e.category_id = ANY(STRING_TO_ARRAY(:categories, ','))) " +
-            "AND (:paid IS NULL OR e.paid = :paid) " +
+            "     CAST(e.category_id AS TEXT) = ANY(STRING_TO_ARRAY(CAST(:categories AS TEXT), ','))) " +
+            "AND (:paid IS NULL OR e.paid = CAST(:paid AS BOOLEAN)) " +
             "AND (:onlyAvailable = false OR " +
             "     e.participant_limit = 0 OR " +
             "     (SELECT COUNT(*) FROM participation_requests pr " +
@@ -62,11 +62,11 @@ public interface EventRepository extends JpaRepository<Event, Long> {
             "AND e.event_date >= CAST(:rangeStart AS TIMESTAMP) " +
             "AND e.event_date <= CAST(:rangeEnd AS TIMESTAMP) " +
             "AND (:text IS NULL OR " +
-            "     e.annotation ILIKE CONCAT('%', :text, '%') OR " +
-            "     e.description ILIKE CONCAT('%', :text, '%')) " +
+            "     CAST(e.annotation AS TEXT) ILIKE CONCAT('%', CAST(:text AS TEXT), '%') OR " +
+            "     CAST(e.description AS TEXT) ILIKE CONCAT('%', CAST(:text AS TEXT), '%')) " +
             "AND (:categories IS NULL OR " +
-            "     e.category_id = ANY(STRING_TO_ARRAY(:categories, ','))) " +
-            "AND (:paid IS NULL OR e.paid = :paid) " +
+            "     CAST(e.category_id AS TEXT) = ANY(STRING_TO_ARRAY(CAST(:categories AS TEXT), ','))) " +
+            "AND (:paid IS NULL OR e.paid = CAST(:paid AS BOOLEAN)) " +
             "AND (:onlyAvailable = false OR " +
             "     e.participant_limit = 0 OR " +
             "     (SELECT COUNT(*) FROM participation_requests pr " +
