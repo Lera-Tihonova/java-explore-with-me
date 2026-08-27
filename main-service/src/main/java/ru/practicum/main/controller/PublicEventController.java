@@ -37,7 +37,8 @@ public class PublicEventController {
             HttpServletRequest request) {
         log.info("GET /events - получение событий с фильтрацией");
 
-        saveStats(request);
+        // Сохраняем статистику для списка событий
+        saveStats("/events", request);
 
         return eventService.getEventsForPublic(text, categories, paid, rangeStart, rangeEnd, onlyAvailable, sort, from, size);
     }
@@ -48,22 +49,29 @@ public class PublicEventController {
             HttpServletRequest request) {
         log.info("GET /events/{} - получение подробной информации о событии", id);
 
-        saveStats(request);
+        // Сохраняем статистику для конкретного события
+        saveStats("/events/" + id, request);
 
         return eventService.getEventForPublic(id);
     }
 
-    private void saveStats(HttpServletRequest request) {
+    /**
+     * Сохранение статистики о запросе
+     * @param uri URI запроса (например, "/events" или "/events/1")
+     * @param request HTTP-запрос для получения IP-адреса
+     */
+    private void saveStats(String uri, HttpServletRequest request) {
         try {
             EndpointHitDto hitDto = EndpointHitDto.builder()
                     .app("ewm-main-service")
-                    .uri(request.getRequestURI())
+                    .uri(uri)
                     .ip(request.getRemoteAddr())
                     .timestamp(LocalDateTime.now())
                     .build();
             statsClient.hit(hitDto);
+            log.debug("Статистика сохранена: uri={}, ip={}", uri, request.getRemoteAddr());
         } catch (Exception e) {
-            log.warn("Не удалось сохранить статистику для запроса {}", request.getRequestURI(), e);
+            log.warn("Не удалось сохранить статистику для запроса {}", uri, e);
         }
     }
 }
