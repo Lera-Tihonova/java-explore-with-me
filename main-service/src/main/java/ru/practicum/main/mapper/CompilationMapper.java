@@ -24,7 +24,7 @@ public class CompilationMapper {
                 .title(compilation.getTitle())
                 .pinned(compilation.getPinned())
                 .events(compilation.getEvents().stream()
-                        .map(EventMapper::toShortDto)  // ← ИСПРАВЛЕНО: только один аргумент
+                        .map(EventMapper::toShortDto)
                         .collect(Collectors.toSet()))
                 .build();
     }

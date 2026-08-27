@@ -88,9 +88,6 @@ public class EventServiceImpl implements EventService {
         Pageable pageable = PageRequest.of(from / size, size);
         Page<Event> events = eventRepository.findByInitiatorId(userId, pageable);
 
-        // ВАЖНО: для приватного эндпоинта возвращаем EventShortDto,
-        // но в спецификации для /users/{userId}/events тоже используется EventShortDto
-        // Поэтому здесь нужно использовать toShortDto, а не toFullDto
         return events.stream()
                 .map(EventMapper::toShortDto)
                 .collect(Collectors.toList());
