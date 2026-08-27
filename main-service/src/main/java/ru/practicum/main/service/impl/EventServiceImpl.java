@@ -362,10 +362,13 @@ public class EventServiceImpl implements EventService {
                 ? categories.stream().map(String::valueOf).collect(Collectors.joining(","))
                 : null;
 
-        String searchText = text != null && !text.isEmpty() ? text.trim() : null;
-        if (searchText != null && searchText.isEmpty()) {
-            searchText = null;
+        String searchText = null;
+        if (text != null && !text.trim().isEmpty()) {
+            searchText = text.trim();
         }
+
+        log.info("searchText после обработки: '{}'", searchText);
+        log.info("categoriesStr после обработки: '{}'", categoriesStr);
 
         Page<Event> events = eventRepository.findAllByPublicNative(
                 searchText,
