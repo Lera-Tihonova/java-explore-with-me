@@ -15,7 +15,7 @@ public class EventShortDto {
     private Long id;
     private String annotation;
     private CategoryDto category;
-    private Long confirmedRequests;  // ← ЭТО ПОЛЕ БЫЛО ПРОПУЩЕНО
+    private Long confirmedRequests;
     private LocalDateTime eventDate;
     private UserShortDto initiator;
     private Boolean paid;
