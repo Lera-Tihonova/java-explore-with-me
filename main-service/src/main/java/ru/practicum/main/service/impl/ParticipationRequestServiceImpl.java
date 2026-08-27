@@ -36,6 +36,7 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
     public ParticipationRequestDto createRequest(Long userId, Long eventId) {
         log.info("Создание запроса на участие userId={}, eventId={}", userId, eventId);
 
+        // ========== ЗАМЕЧАНИЕ РЕВЬЮЕРА №2: ПРОВЕРКА eventId ==========
         if (eventId == null) {
             throw new IllegalArgumentException("eventId обязателен для создания запроса");
         }
@@ -64,7 +65,13 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
             throw new ConflictException("Достигнут лимит участников");
         }
 
-        String status = event.getRequestModeration() ? "PENDING" : "CONFIRMED";
+        // ========== ЗАМЕЧАНИЕ РЕВЬЮЕРА №3: СТАТУС CONFIRMED ПРИ participantLimit == 0 ==========
+        String status;
+        if (event.getParticipantLimit() == 0) {
+            status = "CONFIRMED";
+        } else {
+            status = event.getRequestModeration() ? "PENDING" : "CONFIRMED";
+        }
 
         ParticipationRequest request = ParticipationRequest.builder()
                 .created(LocalDateTime.now())

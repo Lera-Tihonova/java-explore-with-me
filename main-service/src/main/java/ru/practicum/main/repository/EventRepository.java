@@ -33,38 +33,35 @@ public interface EventRepository extends JpaRepository<Event, Long> {
                                @Param("rangeEnd") LocalDateTime rangeEnd,
                                Pageable pageable);
 
-    // НАТИВНЫЙ SQL-ЗАПРОС для публичного поиска
     @Query(value = "SELECT * FROM events e " +
             "WHERE e.state = 'PUBLISHED' " +
-            "AND (:text IS NULL OR CAST(e.annotation AS TEXT) ILIKE CONCAT('%', :text, '%') OR CAST(e.description AS TEXT) ILIKE CONCAT('%', :text, '%')) " +
-            "AND (:categories IS NULL OR e.category_id IN (:categories)) " +
-            "AND (:paid IS NULL OR e.paid = :paid) " +
-            "AND (e.event_date >= :rangeStart) " +
-            "AND (e.event_date <= :rangeEnd) " +
-            "AND (:onlyAvailable = false OR e.participant_limit = 0 OR (SELECT COUNT(*) FROM participation_requests pr WHERE pr.event_id = e.id AND pr.status = 'CONFIRMED') < e.participant_limit) " +
-            "ORDER BY e.event_date ASC " +
-            "LIMIT :limit OFFSET :offset",
+            "AND (:text IS NULL OR CAST(e.annotation AS VARCHAR) ILIKE CONCAT('%', :text, '%') OR CAST(e.description AS VARCHAR) ILIKE CONCAT('%', :text, '%')) " +
+            "AND (:categories IS NULL OR CAST(e.category_id AS VARCHAR) = ANY(string_to_array(:categories, ','))) " +
+            "AND (:paid IS NULL OR e.paid = CAST(:paid AS BOOLEAN)) " +
+            "AND (e.event_date >= CAST(:rangeStart AS TIMESTAMP)) " +
+            "AND (e.event_date <= CAST(:rangeEnd AS TIMESTAMP)) " +
+            "AND (:onlyAvailable = 'false' OR e.participant_limit = 0 OR (SELECT COUNT(*) FROM participation_requests pr WHERE pr.event_id = e.id AND pr.status = 'CONFIRMED') < e.participant_limit) " +
+            "ORDER BY e.event_date ASC ",
             nativeQuery = true)
-    List<Event> findAllByPublicNative(@Param("text") String text,
-                                      @Param("categories") List<Long> categories,
+    Page<Event> findAllByPublicNative(@Param("text") String text,
+                                      @Param("categories") String categories,
                                       @Param("paid") Boolean paid,
                                       @Param("rangeStart") LocalDateTime rangeStart,
                                       @Param("rangeEnd") LocalDateTime rangeEnd,
                                       @Param("onlyAvailable") Boolean onlyAvailable,
-                                      @Param("limit") int limit,
-                                      @Param("offset") int offset);
+                                      Pageable pageable);
 
     @Query(value = "SELECT COUNT(*) FROM events e " +
             "WHERE e.state = 'PUBLISHED' " +
-            "AND (:text IS NULL OR CAST(e.annotation AS TEXT) ILIKE CONCAT('%', :text, '%') OR CAST(e.description AS TEXT) ILIKE CONCAT('%', :text, '%')) " +
-            "AND (:categories IS NULL OR e.category_id IN (:categories)) " +
-            "AND (:paid IS NULL OR e.paid = :paid) " +
-            "AND (e.event_date >= :rangeStart) " +
-            "AND (e.event_date <= :rangeEnd) " +
-            "AND (:onlyAvailable = false OR e.participant_limit = 0 OR (SELECT COUNT(*) FROM participation_requests pr WHERE pr.event_id = e.id AND pr.status = 'CONFIRMED') < e.participant_limit)",
+            "AND (:text IS NULL OR CAST(e.annotation AS VARCHAR) ILIKE CONCAT('%', :text, '%') OR CAST(e.description AS VARCHAR) ILIKE CONCAT('%', :text, '%')) " +
+            "AND (:categories IS NULL OR CAST(e.category_id AS VARCHAR) = ANY(string_to_array(:categories, ','))) " +
+            "AND (:paid IS NULL OR e.paid = CAST(:paid AS BOOLEAN)) " +
+            "AND (e.event_date >= CAST(:rangeStart AS TIMESTAMP)) " +
+            "AND (e.event_date <= CAST(:rangeEnd AS TIMESTAMP)) " +
+            "AND (:onlyAvailable = 'false' OR e.participant_limit = 0 OR (SELECT COUNT(*) FROM participation_requests pr WHERE pr.event_id = e.id AND pr.status = 'CONFIRMED') < e.participant_limit)",
             nativeQuery = true)
     Long countAllByPublicNative(@Param("text") String text,
-                                @Param("categories") List<Long> categories,
+                                @Param("categories") String categories,
                                 @Param("paid") Boolean paid,
                                 @Param("rangeStart") LocalDateTime rangeStart,
                                 @Param("rangeEnd") LocalDateTime rangeEnd,

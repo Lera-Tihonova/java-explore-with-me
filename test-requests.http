@@ -1,0 +1,98 @@
+### 1. Создание пользователя
+POST http://localhost:8080/admin/users
+Content-Type: application/json
+
+{
+  "name": "Test User",
+  "email": "test@test.com"
+}
+
+### 2. Создание категории
+POST http://localhost:8080/admin/categories
+Content-Type: application/json
+
+{
+  "name": "Test Category"
+}
+
+### 3. Создание события
+POST http://localhost:8080/users/1/events
+Content-Type: application/json
+
+{
+  "annotation": "Test annotation for event",
+  "category": 1,
+  "description": "Test description for event",
+  "eventDate": "2026-12-31 15:10:05",
+  "location": {"lat": 55.75, "lon": 37.62},
+  "title": "Test Event"
+}
+
+### 4. Публикация события
+PATCH http://localhost:8080/admin/events/1
+Content-Type: application/json
+
+{
+  "stateAction": "PUBLISH_EVENT"
+}
+
+### 5. Получение событий (публичный эндпоинт)
+GET http://localhost:8080/events?categories=1
+
+### 6. Создание второго пользователя
+POST http://localhost:8080/admin/users
+Content-Type: application/json
+
+{
+  "name": "Second User",
+  "email": "second@test.com"
+}
+
+### 7. Создание запроса на участие
+POST http://localhost:8080/users/2/requests?eventId=1
+
+### 8. Получение запросов на участие
+GET http://localhost:8080/users/1/events/1/requests
+
+### 9. Подтверждение запроса (если модерация включена)
+PATCH http://localhost:8080/users/1/events/1/requests
+Content-Type: application/json
+
+{
+  "requestIds": [1],
+  "status": "CONFIRMED"
+}
+
+### 10. Создание подборки
+POST http://localhost:8080/admin/compilations
+Content-Type: application/json
+
+{
+  "title": "Test Compilation",
+  "pinned": true,
+  "events": []
+}
+
+### 11. Получение подборок
+GET http://localhost:8080/compilations?from=0&size=10
+
+### 12. Проверка конфликтов
+### Дубликат email (ожидается 409 Conflict)
+POST http://localhost:8080/admin/users
+Content-Type: application/json
+
+{
+  "name": "Duplicate",
+  "email": "test@test.com"
+}
+
+### Запрос от инициатора (ожидается 409 Conflict)
+POST http://localhost:8080/users/1/requests?eventId=1
+
+### Изменение даты на уже наступившую (ожидается 400 Bad Request)
+PATCH http://localhost:8080/admin/events/1
+Content-Type: application/json
+
+{
+  "eventDate": "2020-10-11 23:10:05"
+}

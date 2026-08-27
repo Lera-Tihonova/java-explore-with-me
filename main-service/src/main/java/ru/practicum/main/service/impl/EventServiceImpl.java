@@ -3,10 +3,8 @@ package ru.practicum.main.service.impl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.main.dto.*;
@@ -343,6 +341,10 @@ public class EventServiceImpl implements EventService {
                                                   Boolean onlyAvailable, String sort, int from, int size) {
         log.info("Получение событий для публичного доступа");
 
+        if (rangeStart != null && rangeEnd != null && rangeStart.isAfter(rangeEnd)) {
+            throw new IllegalArgumentException("Дата начала не может быть позже даты окончания");
+        }
+
         if (rangeStart == null) {
             rangeStart = LocalDateTime.now();
         }
@@ -350,29 +352,24 @@ public class EventServiceImpl implements EventService {
             rangeEnd = LocalDateTime.now().plusYears(100);
         }
 
-        List<Event> events = eventRepository.findAllByPublicNative(
+        Pageable pageable = PageRequest.of(from / size, size);
+
+        // Преобразуем список категорий в строку через запятую
+        String categoriesStr = categories != null && !categories.isEmpty()
+                ? categories.stream().map(String::valueOf).collect(Collectors.joining(","))
+                : null;
+
+        Page<Event> events = eventRepository.findAllByPublicNative(
                 text,
-                categories,
+                categoriesStr,
                 paid,
                 rangeStart,
                 rangeEnd,
                 onlyAvailable != null && onlyAvailable,
-                size,
-                from
+                pageable
         );
 
-        Long total = eventRepository.countAllByPublicNative(
-                text,
-                categories,
-                paid,
-                rangeStart,
-                rangeEnd,
-                onlyAvailable != null && onlyAvailable
-        );
-
-        Page<Event> eventPage = new PageImpl<>(events, PageRequest.of(from / size, size), total);
-
-        return eventPage.stream()
+        return events.stream()
                 .map(event -> {
                     Long confirmed = requestRepository.countConfirmedByEventId(event.getId());
                     Long views = getViewsCount(event.getId());
