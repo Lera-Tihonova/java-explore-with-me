@@ -89,7 +89,11 @@ public class EventServiceImpl implements EventService {
         Page<Event> events = eventRepository.findByInitiatorId(userId, pageable);
 
         return events.stream()
-                .map(EventMapper::toShortDto)
+                .map(event -> {
+                    Long confirmed = requestRepository.countConfirmedByEventId(event.getId());
+                    Long views = getViewsCount(event.getId());
+                    return EventMapper.toShortDto(event, confirmed, views);
+                })
                 .collect(Collectors.toList());
     }
 
@@ -366,7 +370,11 @@ public class EventServiceImpl implements EventService {
         );
 
         return events.stream()
-                .map(EventMapper::toShortDto)
+                .map(event -> {
+                    Long confirmed = requestRepository.countConfirmedByEventId(event.getId());
+                    Long views = getViewsCount(event.getId());
+                    return EventMapper.toShortDto(event, confirmed, views);
+                })
                 .collect(Collectors.toList());
     }
 

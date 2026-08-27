@@ -993,7 +993,7 @@ public class CompilationMapper {
                 .title(compilation.getTitle())
                 .pinned(compilation.getPinned())
                 .events(compilation.getEvents().stream()
-                        .map(event -> EventMapper.toShortDto(event, 0L, 0L))  // ← преобразуем Event → EventShortDto
+                        .map(EventMapper::toShortDto)
                         .collect(Collectors.toSet()))
                 .build();
     }
@@ -2208,11 +2208,7 @@ public class EventServiceImpl implements EventService {
         Page<Event> events = eventRepository.findByInitiatorId(userId, pageable);
 
         return events.stream()
-                .map(event -> {
-                    Long confirmed = requestRepository.countConfirmedByEventId(event.getId());
-                    Long views = getViewsCount(event.getId());
-                    return EventMapper.toFullDto(event, confirmed, views);
-                })
+                .map(EventMapper::toShortDto)
                 .collect(Collectors.toList());
     }
 
@@ -3949,9 +3945,7 @@ public class ErrorHandler {
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="9b799640-21fc-4fa9-8399-91b8bc36c86f" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/main-service/src/main/java/ru/practicum/main/dto/EventShortDto.java" beforeDir="false" afterPath="$PROJECT_DIR$/main-service/src/main/java/ru/practicum/main/dto/EventShortDto.java" afterDir="false" />
-    </list>
+    <list default="true" id="9b799640-21fc-4fa9-8399-91b8bc36c86f" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />

@@ -47,15 +47,17 @@ public class EventMapper {
                 .build();
     }
 
-    public static EventShortDto toShortDto(Event event) {
+    public static EventShortDto toShortDto(Event event, Long confirmedRequests, Long views) {
         return EventShortDto.builder()
                 .id(event.getId())
                 .annotation(event.getAnnotation())
                 .category(CategoryMapper.toDto(event.getCategory()))
+                .confirmedRequests(confirmedRequests)
                 .eventDate(event.getEventDate())
                 .initiator(UserMapper.toShortDto(event.getInitiator()))
                 .paid(event.getPaid())
                 .title(event.getTitle())
+                .views(views)
                 .build();
     }
 }
