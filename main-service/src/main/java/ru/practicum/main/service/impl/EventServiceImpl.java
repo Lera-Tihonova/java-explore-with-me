@@ -22,6 +22,7 @@ import ru.practicum.stats.dto.EndpointHitDto;
 import ru.practicum.stats.dto.ViewStatsDto;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -367,25 +368,30 @@ public class EventServiceImpl implements EventService {
             searchText = null;
         }
 
-        Page<Event> events = eventRepository.findAllByPublicNative(
-                searchText,
-                categoriesStr,
-                paid,
-                rangeStart,
-                rangeEnd,
-                onlyAvailable != null && onlyAvailable,
-                pageable
-        );
+        try {
+            Page<Event> events = eventRepository.findAllByPublicNative(
+                    searchText,
+                    categoriesStr,
+                    paid,
+                    rangeStart,
+                    rangeEnd,
+                    onlyAvailable != null && onlyAvailable,
+                    pageable
+            );
 
-        log.info("Найдено событий: {}", events.getTotalElements());
+            log.info("Найдено событий: {}", events.getTotalElements());
 
-        return events.stream()
-                .map(event -> {
-                    Long confirmed = requestRepository.countConfirmedByEventId(event.getId());
-                    Long views = getViewsCount(event.getId());
-                    return EventMapper.toShortDto(event, confirmed, views);
-                })
-                .collect(Collectors.toList());
+            return events.stream()
+                    .map(event -> {
+                        Long confirmed = requestRepository.countConfirmedByEventId(event.getId());
+                        Long views = getViewsCount(event.getId());
+                        return EventMapper.toShortDto(event, confirmed, views);
+                    })
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("Ошибка при поиске событий: {}", e.getMessage(), e);
+            return new ArrayList<>();
+        }
     }
 
     @Override
