@@ -358,21 +358,9 @@ public class EventServiceImpl implements EventService {
 
         Pageable pageable = PageRequest.of(from / size, size);
 
-        String categoriesStr = categories != null && !categories.isEmpty()
-                ? categories.stream().map(String::valueOf).collect(Collectors.joining(","))
-                : null;
-
-        String searchText = null;
-        if (text != null && !text.trim().isEmpty()) {
-            searchText = text.trim();
-        }
-
-        log.info("searchText после обработки: '{}'", searchText);
-        log.info("categoriesStr после обработки: '{}'", categoriesStr);
-
-        Page<Event> events = eventRepository.findAllByPublicNative(
-                searchText,
-                categoriesStr,
+        Page<Event> events = eventRepository.findAllByPublic(
+                text,
+                categories,
                 paid,
                 rangeStart,
                 rangeEnd,
