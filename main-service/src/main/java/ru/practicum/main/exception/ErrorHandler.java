@@ -26,6 +26,13 @@ public class ErrorHandler {
 
     @ExceptionHandler
     @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleBadRequest(BadRequestException e) {
+        log.error("Ошибка запроса: {}", e.getMessage());
+        return ErrorResponse.badRequest(e.getMessage());
+    }
+
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse handleValidationExceptions(MethodArgumentNotValidException ex) {
         log.error("Ошибка валидации: {}", ex.getMessage(), ex);
         Map<String, String> fieldErrors = new HashMap<>();

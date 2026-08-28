@@ -27,8 +27,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class ParticipationRequestServiceImpl
-        implements ParticipationRequestService {
+public class ParticipationRequestServiceImpl implements ParticipationRequestService {
 
     private final ParticipationRequestRepository requestRepository;
     private final UserRepository userRepository;
@@ -37,17 +36,17 @@ public class ParticipationRequestServiceImpl
     @Override
     @Transactional
     public ParticipationRequestDto createRequest(Long userId, Long eventId) {
+        log.debug("Создание запроса на участие userId={}, eventId={}", userId, eventId);
+
         if (eventId == null) {
             throw new IllegalArgumentException("eventId обязателен");
         }
 
         User requester = userRepository.findById(userId)
-                .orElseThrow(() ->
-                        new NotFoundException("Пользователь с id " + userId + " не найден"));
+                .orElseThrow(() -> new NotFoundException("Пользователь с id " + userId + " не найден"));
 
         Event event = eventRepository.findById(eventId)
-                .orElseThrow(() ->
-                        new NotFoundException("Событие с id " + eventId + " не найдено"));
+                .orElseThrow(() -> new NotFoundException("Событие с id " + eventId + " не найдено"));
 
         if (event.getInitiator().getId().equals(userId)) {
             throw new ConflictException("Инициатор события не может создать запрос на участие");
@@ -78,11 +77,16 @@ public class ParticipationRequestServiceImpl
                 .status(status)
                 .build();
 
-        return ParticipationRequestMapper.toDto(requestRepository.save(request));
+        ParticipationRequest saved = requestRepository.save(request);
+        log.debug("Создан запрос id={}, статус={}", saved.getId(), saved.getStatus());
+
+        return ParticipationRequestMapper.toDto(saved);
     }
 
     @Override
     public List<ParticipationRequestDto> getRequestsByUser(Long userId) {
+        log.debug("Получение запросов пользователя userId={}", userId);
+
         if (!userRepository.existsById(userId)) {
             throw new NotFoundException("Пользователь с id " + userId + " не найден");
         }
@@ -96,31 +100,30 @@ public class ParticipationRequestServiceImpl
 
     @Override
     @Transactional
-    public ParticipationRequestDto cancelRequest(
-            Long userId,
-            Long requestId
-    ) {
+    public ParticipationRequestDto cancelRequest(Long userId, Long requestId) {
+        log.debug("Отмена запроса userId={}, requestId={}", userId, requestId);
+
         ParticipationRequest request = requestRepository
                 .findByIdAndRequesterId(requestId, userId)
-                .orElseThrow(() ->
-                        new NotFoundException("Запрос с id " + requestId + " не найден"));
+                .orElseThrow(() -> new NotFoundException("Запрос с id " + requestId + " не найден"));
 
         if ("CANCELED".equals(request.getStatus())) {
             return ParticipationRequestMapper.toDto(request);
         }
 
         request.setStatus("CANCELED");
-        return ParticipationRequestMapper.toDto(requestRepository.save(request));
+        ParticipationRequest saved = requestRepository.save(request);
+        log.debug("Запрос id={} отменён", saved.getId());
+
+        return ParticipationRequestMapper.toDto(saved);
     }
 
     @Override
-    public List<ParticipationRequestDto> getRequestsByEvent(
-            Long userId,
-            Long eventId
-    ) {
+    public List<ParticipationRequestDto> getRequestsByEvent(Long userId, Long eventId) {
+        log.debug("Получение запросов на участие в событии userId={}, eventId={}", userId, eventId);
+
         Event event = eventRepository.findById(eventId)
-                .orElseThrow(() ->
-                        new NotFoundException("Событие с id " + eventId + " не найдено"));
+                .orElseThrow(() -> new NotFoundException("Событие с id " + eventId + " не найдено"));
 
         if (!event.getInitiator().getId().equals(userId)) {
             throw new ConflictException("Пользователь не является инициатором события");
@@ -140,9 +143,11 @@ public class ParticipationRequestServiceImpl
             Long eventId,
             EventRequestStatusUpdateRequest request
     ) {
+        log.debug("Обновление статуса запросов userId={}, eventId={}, status={}",
+                userId, eventId, request.getStatus());
+
         Event event = eventRepository.findById(eventId)
-                .orElseThrow(() ->
-                        new NotFoundException("Событие с id " + eventId + " не найдено"));
+                .orElseThrow(() -> new NotFoundException("Событие с id " + eventId + " не найдено"));
 
         if (!event.getInitiator().getId().equals(userId)) {
             throw new ConflictException("Пользователь не является инициатором события");
@@ -154,8 +159,7 @@ public class ParticipationRequestServiceImpl
             throw new ConflictException("Некорректный статус запроса");
         }
 
-        List<ParticipationRequest> requests =
-                requestRepository.findAllById(request.getRequestIds());
+        List<ParticipationRequest> requests = requestRepository.findAllById(request.getRequestIds());
 
         if (requests.size() != request.getRequestIds().size()) {
             throw new NotFoundException("Некоторые запросы не найдены");
@@ -183,17 +187,20 @@ public class ParticipationRequestServiceImpl
                 continue;
             }
 
+            // ИСПРАВЛЕНИЕ: проверяем лимит ДО подтверждения
             if (event.getParticipantLimit() > 0 && confirmedCount >= event.getParticipantLimit()) {
-                item.setStatus("REJECTED");
-                rejected.add(item);
-            } else {
-                item.setStatus("CONFIRMED");
-                confirmed.add(item);
-                confirmedCount++;
+                throw new ConflictException("Достигнут лимит участников");
             }
+
+            item.setStatus("CONFIRMED");
+            confirmed.add(item);
+            confirmedCount++;
         }
 
         requestRepository.saveAll(requests);
+
+        log.debug("Обновлены статусы: подтверждено={}, отклонено={}",
+                confirmed.size(), rejected.size());
 
         return EventRequestStatusUpdateResult.builder()
                 .confirmedRequests(confirmed.stream()

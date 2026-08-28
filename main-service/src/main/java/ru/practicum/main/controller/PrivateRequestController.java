@@ -5,9 +5,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.main.dto.ParticipationRequestDto;
+import ru.practicum.main.exception.BadRequestException;
 import ru.practicum.main.service.ParticipationRequestService;
 
-import jakarta.validation.constraints.NotNull;
 import java.util.List;
 
 @Slf4j
@@ -30,9 +30,12 @@ public class PrivateRequestController {
     @ResponseStatus(HttpStatus.CREATED)
     public ParticipationRequestDto addRequest(
             @PathVariable Long userId,
-            @RequestParam @NotNull Long eventId
+            @RequestParam(required = false) Long eventId
     ) {
-        log.info("POST /users/{}/requests - добавление запроса на участие в событии {}", userId, eventId);
+        log.info("POST /users/{}/requests - добавление запроса на участие", userId);
+        if (eventId == null) {
+            throw new BadRequestException("eventId is required");
+        }
         return requestService.createRequest(userId, eventId);
     }
 

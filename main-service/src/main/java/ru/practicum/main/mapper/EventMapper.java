@@ -73,11 +73,6 @@ public final class EventMapper {
             Long confirmedRequests,
             Long views
     ) {
-        Location location = new Location(
-                event.getLocation().getLat(),
-                event.getLocation().getLon()
-        );
-
         return EventShortDto.builder()
                 .id(event.getId())
                 .annotation(event.getAnnotation())
