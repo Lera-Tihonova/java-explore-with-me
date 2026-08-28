@@ -57,6 +57,13 @@ public class ErrorHandler {
     }
 
     @ExceptionHandler
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleMethodArgumentTypeMismatch(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException e) {
+        log.error("Ошибка типа аргумента: {}", e.getMessage());
+        return ErrorResponse.badRequest("Invalid parameter format: " + e.getName());
+    }
+
+    @ExceptionHandler
     @ResponseStatus(HttpStatus.CONFLICT)
     public ErrorResponse handleConflict(ConflictException e) {
         log.error("Конфликт: {}", e.getMessage());

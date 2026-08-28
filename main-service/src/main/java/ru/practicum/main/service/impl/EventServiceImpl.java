@@ -13,6 +13,7 @@ import ru.practicum.main.dto.EventShortDto;
 import ru.practicum.main.dto.NewEventDto;
 import ru.practicum.main.dto.UpdateEventAdminRequest;
 import ru.practicum.main.dto.UpdateEventUserRequest;
+import ru.practicum.main.exception.BadRequestException;
 import ru.practicum.main.exception.ConflictException;
 import ru.practicum.main.exception.NotFoundException;
 import ru.practicum.main.mapper.EventMapper;
@@ -31,6 +32,8 @@ import ru.practicum.stats.dto.ViewStatsDto;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 
 @Slf4j
@@ -38,6 +41,9 @@ import java.util.List;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class EventServiceImpl implements EventService {
+
+    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static final DateTimeFormatter FORMATTER_ISO = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 
     private final EventRepository eventRepository;
     private final UserRepository userRepository;
@@ -62,7 +68,7 @@ public class EventServiceImpl implements EventService {
                         new NotFoundException("Категория с id " + request.getCategory() + " не найдена"));
 
         if (request.getEventDate().isBefore(LocalDateTime.now().plusHours(2))) {
-            throw new IllegalArgumentException("Дата события должна быть не раньше чем через 2 часа");
+            throw new BadRequestException("Дата события должна быть не раньше чем через 2 часа");
         }
 
         Event event = EventMapper.toEntity(request, initiator, category);
@@ -129,7 +135,7 @@ public class EventServiceImpl implements EventService {
 
         if (request.getEventDate() != null
                 && request.getEventDate().isBefore(LocalDateTime.now().plusHours(2))) {
-            throw new IllegalArgumentException("Дата события должна быть не раньше чем через 2 часа");
+            throw new BadRequestException("Дата события должна быть не раньше чем через 2 часа");
         }
 
         if (request.getAnnotation() != null) {
@@ -246,7 +252,7 @@ public class EventServiceImpl implements EventService {
 
         if (request.getEventDate() != null) {
             if (request.getEventDate().isBefore(LocalDateTime.now())) {
-                throw new IllegalArgumentException("Дата события не может быть в прошлом");
+                throw new BadRequestException("Дата события не может быть в прошлом");
             }
             event.setEventDate(request.getEventDate());
         }
@@ -298,8 +304,8 @@ public class EventServiceImpl implements EventService {
             String text,
             List<Long> categories,
             Boolean paid,
-            LocalDateTime rangeStart,
-            LocalDateTime rangeEnd,
+            String rangeStart,
+            String rangeEnd,
             Boolean onlyAvailable,
             String sort,
             int from,
@@ -308,27 +314,26 @@ public class EventServiceImpl implements EventService {
         log.debug("Получение событий для публичного доступа: text={}, categories={}, paid={}, rangeStart={}, rangeEnd={}, onlyAvailable={}, sort={}, from={}, size={}",
                 text, categories, paid, rangeStart, rangeEnd, onlyAvailable, sort, from, size);
 
-        LocalDateTime start = rangeStart == null
-                ? LocalDateTime.now()
-                : rangeStart;
+        // Парсим даты
+        LocalDateTime start = parseDate(rangeStart, true);
+        LocalDateTime end = parseDate(rangeEnd, false);
 
-        LocalDateTime end = rangeEnd == null
-                ? LocalDateTime.of(9999, 12, 31, 23, 59)
-                : rangeEnd;
-
-        if (start.isAfter(end)) {
-            throw new IllegalArgumentException("Дата начала не может быть позже даты окончания");
+        // Валидация категорий
+        if (categories != null && !categories.isEmpty()) {
+            for (Long catId : categories) {
+                if (catId == null || catId <= 0) {
+                    throw new BadRequestException("Invalid category id: " + catId);
+                }
+            }
         }
 
         Sort sorting = Sort.unsorted();
-
         if ("EVENT_DATE".equalsIgnoreCase(sort)) {
             sorting = Sort.by(Sort.Direction.ASC, "eventDate");
         }
 
         Pageable pageable = PageRequest.of(from / size, size, sorting);
 
-        // text игнорируется для совместимости API, чтобы не было ошибки с lower(bytea)
         Page<Event> eventPage = eventRepository.findAllByPublic(
                 categories == null || categories.isEmpty() ? null : categories,
                 paid,
@@ -358,7 +363,6 @@ public class EventServiceImpl implements EventService {
             throw new NotFoundException("Событие с id " + eventId + " не опубликовано");
         }
 
-        // Сохраняем статистику с реальным IP из запроса
         try {
             String clientIp = request.getRemoteAddr();
             log.debug("Сохранение статистики для события {}, IP={}", eventId, clientIp);
@@ -377,6 +381,21 @@ public class EventServiceImpl implements EventService {
         }
 
         return toFullDto(event);
+    }
+
+    private LocalDateTime parseDate(String date, boolean isStart) {
+        if (date == null) {
+            return isStart ? LocalDateTime.now() : LocalDateTime.of(9999, 12, 31, 23, 59);
+        }
+        try {
+            return LocalDateTime.parse(date, FORMATTER);
+        } catch (DateTimeParseException e1) {
+            try {
+                return LocalDateTime.parse(date, FORMATTER_ISO);
+            } catch (DateTimeParseException e2) {
+                throw new BadRequestException("Invalid date format: " + date + ". Expected yyyy-MM-dd HH:mm:ss");
+            }
+        }
     }
 
     private Event findEvent(Long eventId) {

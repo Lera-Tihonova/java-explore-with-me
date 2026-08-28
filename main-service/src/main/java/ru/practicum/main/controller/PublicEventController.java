@@ -6,6 +6,8 @@ import org.springframework.web.bind.annotation.*;
 import ru.practicum.main.dto.EventFullDto;
 import ru.practicum.main.dto.EventShortDto;
 import ru.practicum.main.service.EventService;
+import ru.practicum.stats.client.StatsClient;
+import ru.practicum.stats.dto.EndpointHitDto;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
@@ -18,14 +20,15 @@ import java.util.List;
 public class PublicEventController {
 
     private final EventService eventService;
+    private final StatsClient statsClient;
 
     @GetMapping
     public List<EventShortDto> getEvents(
             @RequestParam(required = false) String text,
             @RequestParam(required = false) List<Long> categories,
             @RequestParam(required = false) Boolean paid,
-            @RequestParam(required = false) LocalDateTime rangeStart,
-            @RequestParam(required = false) LocalDateTime rangeEnd,
+            @RequestParam(required = false) String rangeStart,
+            @RequestParam(required = false) String rangeEnd,
             @RequestParam(defaultValue = "false") Boolean onlyAvailable,
             @RequestParam(required = false) String sort,
             @RequestParam(defaultValue = "0") int from,
@@ -33,6 +36,8 @@ public class PublicEventController {
             HttpServletRequest request
     ) {
         log.info("GET /events - получение событий с фильтрацией");
+
+        saveStats("/events", request);
 
         return eventService.getEventsForPublic(
                 text,
@@ -54,6 +59,23 @@ public class PublicEventController {
     ) {
         log.info("GET /events/{} - получение подробной информации о событии", id);
 
+        saveStats("/events/" + id, request);
+
         return eventService.getEventForPublic(id, request);
+    }
+
+    private void saveStats(String uri, HttpServletRequest request) {
+        try {
+            EndpointHitDto hitDto = EndpointHitDto.builder()
+                    .app("ewm-main-service")
+                    .uri(uri)
+                    .ip(request.getRemoteAddr())
+                    .timestamp(LocalDateTime.now())
+                    .build();
+            statsClient.hit(hitDto);
+            log.info("Статистика сохранена: uri={}, ip={}", uri, request.getRemoteAddr());
+        } catch (Exception e) {
+            log.warn("Не удалось сохранить статистику для запроса {}", uri, e);
+        }
     }
 }
