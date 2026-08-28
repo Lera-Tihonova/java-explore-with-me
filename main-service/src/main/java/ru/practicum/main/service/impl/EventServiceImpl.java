@@ -432,7 +432,7 @@ public class EventServiceImpl implements EventService {
                     LocalDateTime.of(1970, 1, 1, 0, 0),
                     LocalDateTime.now(),
                     List.of("/events/" + eventId),
-                    false  // ← ИСПРАВЛЕНО: unique = false
+                    true  // ← ИСПРАВЛЕНО: unique = false
             );
 
             return stats.stream()
