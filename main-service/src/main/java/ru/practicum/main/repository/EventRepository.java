@@ -53,7 +53,6 @@ public interface EventRepository extends JpaRepository<Event, Long> {
                          and r.status = 'CONFIRMED') < e.participantLimit)
             """)
     Page<Event> findAllByPublic(
-            @Param("text") String text,
             @Param("categories") List<Long> categories,
             @Param("paid") Boolean paid,
             @Param("rangeStart") LocalDateTime rangeStart,

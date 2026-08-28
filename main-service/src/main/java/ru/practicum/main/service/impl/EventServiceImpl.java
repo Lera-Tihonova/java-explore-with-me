@@ -307,16 +307,17 @@ public class EventServiceImpl implements EventService {
 
         Pageable pageable = PageRequest.of(from / size, size, sorting);
 
-        return eventRepository.findAllByPublic(
-                        text == null || text.isBlank() ? null : text,
-                        categories == null || categories.isEmpty() ? null : categories,
-                        paid,
-                        start,
-                        end,
-                        Boolean.TRUE.equals(onlyAvailable),
-                        pageable
-                )
-                .stream()
+        // Убрали параметр text
+        Page<Event> eventPage = eventRepository.findAllByPublic(
+                categories == null || categories.isEmpty() ? null : categories,
+                paid,
+                start,
+                end,
+                Boolean.TRUE.equals(onlyAvailable),
+                pageable
+        );
+
+        return eventPage.stream()
                 .map(this::toShortDto)
                 .toList();
     }
