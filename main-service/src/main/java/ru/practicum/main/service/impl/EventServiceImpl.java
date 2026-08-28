@@ -360,7 +360,7 @@ public class EventServiceImpl implements EventService {
         if (event.getState() != EventState.PUBLISHED) {
             throw new NotFoundException("Событие с id " + eventId + " не опубликовано");
         }
-
+/*
         try {
             String clientIp = request.getRemoteAddr();
             log.debug("Сохранение статистики для события {}, IP={}", eventId, clientIp);
@@ -377,7 +377,7 @@ public class EventServiceImpl implements EventService {
         } catch (Exception e) {
             log.warn("Не удалось сохранить статистику для события {}: {}", eventId, e.getMessage());
         }
-
+*/
         return toFullDto(event);
     }
 
