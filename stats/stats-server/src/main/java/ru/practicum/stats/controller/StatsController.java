@@ -3,7 +3,6 @@ package ru.practicum.stats.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.stats.dto.EndpointHitDto;
@@ -14,6 +13,7 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 
 @Slf4j
@@ -33,20 +33,31 @@ public class StatsController {
 
     @GetMapping("/stats")
     public List<ViewStatsDto> getStats(
-            @RequestParam String start,
-            @RequestParam String end,
+            @RequestParam(required = false) String start,
+            @RequestParam(required = false) String end,
             @RequestParam(required = false) List<String> uris,
             @RequestParam(defaultValue = "false") Boolean unique) {
 
-        String decodedStart = URLDecoder.decode(start, StandardCharsets.UTF_8);
-        String decodedEnd = URLDecoder.decode(end, StandardCharsets.UTF_8);
+        if (start == null || start.isBlank()) {
+            throw new IllegalArgumentException("start parameter is required");
+        }
+        if (end == null || end.isBlank()) {
+            throw new IllegalArgumentException("end parameter is required");
+        }
 
-        LocalDateTime startDateTime = LocalDateTime.parse(decodedStart, FORMATTER);
-        LocalDateTime endDateTime = LocalDateTime.parse(decodedEnd, FORMATTER);
+        try {
+            String decodedStart = URLDecoder.decode(start, StandardCharsets.UTF_8);
+            String decodedEnd = URLDecoder.decode(end, StandardCharsets.UTF_8);
 
-        log.info("GET /stats - получение статистики: start={}, end={}, uris={}, unique={}",
-                startDateTime, endDateTime, uris, unique);
+            LocalDateTime startDateTime = LocalDateTime.parse(decodedStart, FORMATTER);
+            LocalDateTime endDateTime = LocalDateTime.parse(decodedEnd, FORMATTER);
 
-        return statsService.getStats(startDateTime, endDateTime, uris, unique);
+            log.info("GET /stats - получение статистики: start={}, end={}, uris={}, unique={}",
+                    startDateTime, endDateTime, uris, unique);
+
+            return statsService.getStats(startDateTime, endDateTime, uris, unique);
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("Invalid date format. Expected yyyy-MM-dd HH:mm:ss");
+        }
     }
 }

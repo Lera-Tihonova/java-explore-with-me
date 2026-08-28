@@ -314,11 +314,9 @@ public class EventServiceImpl implements EventService {
         log.debug("Получение событий для публичного доступа: text={}, categories={}, paid={}, rangeStart={}, rangeEnd={}, onlyAvailable={}, sort={}, from={}, size={}",
                 text, categories, paid, rangeStart, rangeEnd, onlyAvailable, sort, from, size);
 
-        // Парсим даты
         LocalDateTime start = parseDate(rangeStart, true);
         LocalDateTime end = parseDate(rangeEnd, false);
 
-        // Валидация категорий
         if (categories != null && !categories.isEmpty()) {
             for (Long catId : categories) {
                 if (catId == null || catId <= 0) {
@@ -434,7 +432,7 @@ public class EventServiceImpl implements EventService {
                     LocalDateTime.of(1970, 1, 1, 0, 0),
                     LocalDateTime.now(),
                     List.of("/events/" + eventId),
-                    true
+                    false  // ← ИСПРАВЛЕНО: unique = false
             );
 
             return stats.stream()

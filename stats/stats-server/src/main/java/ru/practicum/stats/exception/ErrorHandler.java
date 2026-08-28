@@ -37,7 +37,7 @@ public class ErrorHandler {
     @ExceptionHandler
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse handleIllegalArgumentException(IllegalArgumentException e) {
-        log.error("Ошибка валидации: {}", e.getMessage());
+        log.error("Ошибка запроса: {}", e.getMessage());
         return ErrorResponse.badRequest(e.getMessage());
     }
 
