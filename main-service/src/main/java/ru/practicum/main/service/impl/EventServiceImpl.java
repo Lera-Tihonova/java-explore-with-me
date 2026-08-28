@@ -51,8 +51,6 @@ public class EventServiceImpl implements EventService {
             Long userId,
             NewEventDto request
     ) {
-        log.debug("Создание события пользователем userId={}", userId);
-
         User initiator = userRepository.findById(userId)
                 .orElseThrow(() ->
                         new NotFoundException("Пользователь с id " + userId + " не найден"));
@@ -70,7 +68,6 @@ public class EventServiceImpl implements EventService {
         event.setState(EventState.PENDING);
 
         Event saved = eventRepository.save(event);
-        log.debug("Событие создано с id={}", saved.getId());
 
         return EventMapper.toFullDto(saved, 0L, 0L);
     }
@@ -81,7 +78,6 @@ public class EventServiceImpl implements EventService {
             int from,
             int size
     ) {
-        log.debug("Получение событий пользователя userId={}", userId);
         ensureUserExists(userId);
 
         Pageable pageable = PageRequest.of(from / size, size);
@@ -97,8 +93,6 @@ public class EventServiceImpl implements EventService {
             Long userId,
             Long eventId
     ) {
-        log.debug("Получение события userId={}, eventId={}", userId, eventId);
-
         Event event = findEvent(eventId);
 
         if (!event.getInitiator().getId().equals(userId)) {
@@ -115,8 +109,6 @@ public class EventServiceImpl implements EventService {
             Long eventId,
             UpdateEventUserRequest request
     ) {
-        log.debug("Обновление события userId={}, eventId={}", userId, eventId);
-
         Event event = findEvent(eventId);
 
         if (!event.getInitiator().getId().equals(userId)) {
@@ -177,10 +169,7 @@ public class EventServiceImpl implements EventService {
             event.setState(EventState.CANCELED);
         }
 
-        Event updated = eventRepository.save(event);
-        log.debug("Событие обновлено id={}", updated.getId());
-
-        return toFullDto(updated);
+        return toFullDto(eventRepository.save(event));
     }
 
     @Override
@@ -193,8 +182,6 @@ public class EventServiceImpl implements EventService {
             int from,
             int size
     ) {
-        log.debug("Получение событий для администратора");
-
         List<EventState> eventStates = states == null
                 ? null
                 : states.stream().map(EventState::valueOf).toList();
@@ -228,8 +215,6 @@ public class EventServiceImpl implements EventService {
             Long eventId,
             UpdateEventAdminRequest request
     ) {
-        log.debug("Обновление события администратором eventId={}", eventId);
-
         Event event = findEvent(eventId);
 
         if (request.getAnnotation() != null) {
@@ -287,10 +272,7 @@ public class EventServiceImpl implements EventService {
             event.setState(EventState.CANCELED);
         }
 
-        Event updated = eventRepository.save(event);
-        log.debug("Событие обновлено админом id={}", updated.getId());
-
-        return toFullDto(updated);
+        return toFullDto(eventRepository.save(event));
     }
 
     @Override
@@ -305,9 +287,6 @@ public class EventServiceImpl implements EventService {
             int from,
             int size
     ) {
-        log.debug("Получение событий для публичного доступа: text={}, categories={}, paid={}, rangeStart={}, rangeEnd={}, onlyAvailable={}, sort={}, from={}, size={}",
-                text, categories, paid, rangeStart, rangeEnd, onlyAvailable, sort, from, size);
-
         LocalDateTime start = rangeStart == null
                 ? LocalDateTime.now()
                 : rangeStart;
@@ -324,28 +303,20 @@ public class EventServiceImpl implements EventService {
 
         if ("EVENT_DATE".equalsIgnoreCase(sort)) {
             sorting = Sort.by(Sort.Direction.ASC, "eventDate");
-        } else if ("VIEWS".equalsIgnoreCase(sort)) {
-            // Для VIEWS сортировка не поддерживается в JPA, оставляем без сортировки
-            sorting = Sort.unsorted();
         }
 
         Pageable pageable = PageRequest.of(from / size, size, sorting);
 
-        String searchText = (text == null || text.isBlank()) ? null : text.trim();
-
-        Page<Event> eventPage = eventRepository.findAllByPublic(
-                searchText,
-                categories == null || categories.isEmpty() ? null : categories,
-                paid,
-                start,
-                end,
-                Boolean.TRUE.equals(onlyAvailable),
-                pageable
-        );
-
-        log.debug("Найдено событий: {}", eventPage.getTotalElements());
-
-        return eventPage.stream()
+        return eventRepository.findAllByPublic(
+                        text == null || text.isBlank() ? null : text,
+                        categories == null || categories.isEmpty() ? null : categories,
+                        paid,
+                        start,
+                        end,
+                        Boolean.TRUE.equals(onlyAvailable),
+                        pageable
+                )
+                .stream()
                 .map(this::toShortDto)
                 .toList();
     }
@@ -355,30 +326,23 @@ public class EventServiceImpl implements EventService {
             Long eventId,
             HttpServletRequest request
     ) {
-        log.debug("Получение события для публичного доступа eventId={}", eventId);
-
         Event event = findEvent(eventId);
 
         if (event.getState() != EventState.PUBLISHED) {
             throw new NotFoundException("Событие с id " + eventId + " не опубликовано");
         }
 
-        // Сохраняем статистику с реальным IP из запроса
         try {
-            String clientIp = request.getRemoteAddr();
-            log.debug("Сохранение статистики для события {}, IP={}", eventId, clientIp);
-
             EndpointHitDto hitDto = EndpointHitDto.builder()
                     .app("ewm-main-service")
                     .uri("/events/" + eventId)
-                    .ip(clientIp)
+                    .ip(request.getRemoteAddr())
                     .timestamp(LocalDateTime.now())
                     .build();
 
             statsClient.hit(hitDto);
-            log.debug("Статистика сохранена для события {}", eventId);
         } catch (Exception e) {
-            log.warn("Не удалось сохранить статистику для события {}: {}", eventId, e.getMessage());
+            log.warn("Не удалось сохранить статистику для события {}", eventId, e);
         }
 
         return toFullDto(event);
@@ -405,22 +369,15 @@ public class EventServiceImpl implements EventService {
     private EventShortDto toShortDto(Event event) {
         long confirmed = requestRepository.countConfirmedByEventId(event.getId());
         long views = getViews(event.getId());
-
-        log.debug("Event id={}, confirmed={}, views={}", event.getId(), confirmed, views);
-
         return EventMapper.toShortDto(event, confirmed, views);
     }
 
     private EventFullDto toFullDto(Event event) {
         long confirmed = requestRepository.countConfirmedByEventId(event.getId());
         long views = getViews(event.getId());
-
-        log.debug("Event id={}, confirmed={}, views={}", event.getId(), confirmed, views);
-
         return EventMapper.toFullDto(event, confirmed, views);
     }
 
-    // СДЕЛАЛИ PUBLIC вместо PRIVATE
     public long getViews(Long eventId) {
         try {
             List<ViewStatsDto> stats = statsClient.getStats(
@@ -430,15 +387,11 @@ public class EventServiceImpl implements EventService {
                     true
             );
 
-            long views = stats.stream()
+            return stats.stream()
                     .filter(item -> ("/events/" + eventId).equals(item.getUri()))
                     .mapToLong(ViewStatsDto::getHits)
                     .sum();
-
-            log.debug("Получены views для события {}: {}", eventId, views);
-            return views;
         } catch (Exception e) {
-            log.warn("Не удалось получить статистику для события {}: {}", eventId, e.getMessage());
             return 0L;
         }
     }

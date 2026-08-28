@@ -35,9 +35,7 @@ public class CompilationServiceImpl implements CompilationService {
     @Transactional
     public CompilationDto createCompilation(NewCompilationDto request) {
         Set<Event> events = resolveEvents(request.getEvents());
-
         Compilation compilation = CompilationMapper.toEntity(request, events);
-
         return CompilationMapper.toDto(
                 compilationRepository.save(compilation),
                 requestRepository,
@@ -80,7 +78,6 @@ public class CompilationServiceImpl implements CompilationService {
         Compilation compilation = compilationRepository.findById(compId)
                 .orElseThrow(() ->
                         new NotFoundException("Подборка с id " + compId + " не найдена"));
-
         compilationRepository.delete(compilation);
     }
 
@@ -110,7 +107,6 @@ public class CompilationServiceImpl implements CompilationService {
         Compilation compilation = compilationRepository.findById(compId)
                 .orElseThrow(() ->
                         new NotFoundException("Подборка с id " + compId + " не найдена"));
-
         return CompilationMapper.toDto(compilation, requestRepository, eventService);
     }
 

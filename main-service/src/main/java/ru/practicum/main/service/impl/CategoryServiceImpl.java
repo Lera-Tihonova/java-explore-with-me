@@ -71,7 +71,6 @@ public class CategoryServiceImpl implements CategoryService {
         Category category = categoryRepository.findById(catId)
                 .orElseThrow(() -> new NotFoundException("Категория с id " + catId + " не найдена"));
 
-        // ИСПРАВЛЕНИЕ: используем findByCategoryId вместо findByCategory
         if (!eventRepository.findByCategoryId(catId).isEmpty()) {
             throw new ConflictException("Категория не пуста, нельзя удалить");
         }

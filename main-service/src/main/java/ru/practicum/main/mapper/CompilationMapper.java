@@ -36,7 +36,7 @@ public final class CompilationMapper {
                 .stream()
                 .map(event -> {
                     long confirmed = requestRepository.countConfirmedByEventId(event.getId());
-                    long views = eventService.getViews(event.getId());  // теперь public
+                    long views = eventService.getViews(event.getId());
                     return EventMapper.toShortDto(event, confirmed, views);
                 })
                 .collect(Collectors.toSet());

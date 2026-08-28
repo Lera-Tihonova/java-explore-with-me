@@ -37,7 +37,9 @@ public class ParticipationRequestServiceImpl
     @Override
     @Transactional
     public ParticipationRequestDto createRequest(Long userId, Long eventId) {
-        log.debug("Создание запроса на участие userId={}, eventId={}", userId, eventId);
+        if (eventId == null) {
+            throw new IllegalArgumentException("eventId обязателен");
+        }
 
         User requester = userRepository.findById(userId)
                 .orElseThrow(() ->
@@ -76,16 +78,11 @@ public class ParticipationRequestServiceImpl
                 .status(status)
                 .build();
 
-        ParticipationRequest saved = requestRepository.save(request);
-        log.debug("Создан запрос id={}, статус={}", saved.getId(), saved.getStatus());
-
-        return ParticipationRequestMapper.toDto(saved);
+        return ParticipationRequestMapper.toDto(requestRepository.save(request));
     }
 
     @Override
     public List<ParticipationRequestDto> getRequestsByUser(Long userId) {
-        log.debug("Получение запросов пользователя userId={}", userId);
-
         if (!userRepository.existsById(userId)) {
             throw new NotFoundException("Пользователь с id " + userId + " не найден");
         }
@@ -103,8 +100,6 @@ public class ParticipationRequestServiceImpl
             Long userId,
             Long requestId
     ) {
-        log.debug("Отмена запроса userId={}, requestId={}", userId, requestId);
-
         ParticipationRequest request = requestRepository
                 .findByIdAndRequesterId(requestId, userId)
                 .orElseThrow(() ->
@@ -115,10 +110,7 @@ public class ParticipationRequestServiceImpl
         }
 
         request.setStatus("CANCELED");
-        ParticipationRequest saved = requestRepository.save(request);
-        log.debug("Запрос id={} отменён", saved.getId());
-
-        return ParticipationRequestMapper.toDto(saved);
+        return ParticipationRequestMapper.toDto(requestRepository.save(request));
     }
 
     @Override
@@ -126,8 +118,6 @@ public class ParticipationRequestServiceImpl
             Long userId,
             Long eventId
     ) {
-        log.debug("Получение запросов на участие в событии userId={}, eventId={}", userId, eventId);
-
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() ->
                         new NotFoundException("Событие с id " + eventId + " не найдено"));
@@ -150,9 +140,6 @@ public class ParticipationRequestServiceImpl
             Long eventId,
             EventRequestStatusUpdateRequest request
     ) {
-        log.debug("Обновление статуса запросов userId={}, eventId={}, status={}",
-                userId, eventId, request.getStatus());
-
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() ->
                         new NotFoundException("Событие с id " + eventId + " не найдено"));
@@ -207,9 +194,6 @@ public class ParticipationRequestServiceImpl
         }
 
         requestRepository.saveAll(requests);
-
-        log.debug("Обновлены статусы: подтверждено={}, отклонено={}",
-                confirmed.size(), rejected.size());
 
         return EventRequestStatusUpdateResult.builder()
                 .confirmedRequests(confirmed.stream()

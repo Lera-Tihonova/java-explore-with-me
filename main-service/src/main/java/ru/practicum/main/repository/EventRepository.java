@@ -43,7 +43,6 @@ public interface EventRepository extends JpaRepository<Event, Long> {
             where e.state = ru.practicum.main.model.EventState.PUBLISHED
               and e.eventDate >= :rangeStart
               and e.eventDate <= :rangeEnd
-              and (:text is null or lower(e.annotation) like lower(concat('%', :text, '%')) or lower(e.description) like lower(concat('%', :text, '%')))
               and (:categories is null or e.category.id in :categories)
               and (:paid is null or e.paid = :paid)
               and (:onlyAvailable = false
