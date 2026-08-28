@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import ru.practicum.main.dto.ParticipationRequestDto;
 import ru.practicum.main.service.ParticipationRequestService;
 
+import jakarta.validation.constraints.NotNull;
 import java.util.List;
 
 @Slf4j
@@ -18,7 +19,9 @@ public class PrivateRequestController {
     private final ParticipationRequestService requestService;
 
     @GetMapping
-    public List<ParticipationRequestDto> getRequests(@PathVariable Long userId) {
+    public List<ParticipationRequestDto> getRequests(
+            @PathVariable Long userId
+    ) {
         log.info("GET /users/{}/requests - получение запросов пользователя", userId);
         return requestService.getRequestsByUser(userId);
     }
@@ -27,7 +30,8 @@ public class PrivateRequestController {
     @ResponseStatus(HttpStatus.CREATED)
     public ParticipationRequestDto addRequest(
             @PathVariable Long userId,
-            @RequestParam(required = false) Long eventId) {
+            @RequestParam @NotNull Long eventId
+    ) {
         log.info("POST /users/{}/requests - добавление запроса на участие в событии {}", userId, eventId);
         return requestService.createRequest(userId, eventId);
     }
@@ -35,7 +39,8 @@ public class PrivateRequestController {
     @PatchMapping("/{requestId}/cancel")
     public ParticipationRequestDto cancelRequest(
             @PathVariable Long userId,
-            @PathVariable Long requestId) {
+            @PathVariable Long requestId
+    ) {
         log.info("PATCH /users/{}/requests/{}/cancel - отмена запроса", userId, requestId);
         return requestService.cancelRequest(userId, requestId);
     }

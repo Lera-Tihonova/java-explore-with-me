@@ -1,11 +1,23 @@
 package ru.practicum.main.mapper;
 
-import ru.practicum.main.dto.*;
-import ru.practicum.main.model.*;
+import ru.practicum.main.dto.EventFullDto;
+import ru.practicum.main.dto.EventShortDto;
+import ru.practicum.main.dto.Location;
+import ru.practicum.main.dto.NewEventDto;
+import ru.practicum.main.model.Category;
+import ru.practicum.main.model.Event;
+import ru.practicum.main.model.User;
 
-public class EventMapper {
+public final class EventMapper {
 
-    public static Event toEntity(NewEventDto dto, User initiator, Category category) {
+    private EventMapper() {
+    }
+
+    public static Event toEntity(
+            NewEventDto dto,
+            User initiator,
+            Category category
+    ) {
         return Event.builder()
                 .annotation(dto.getAnnotation())
                 .category(category)
@@ -16,14 +28,26 @@ public class EventMapper {
                         dto.getLocation().getLat(),
                         dto.getLocation().getLon()
                 ))
-                .paid(dto.getPaid() != null ? dto.getPaid() : false)
-                .participantLimit(dto.getParticipantLimit() != null ? dto.getParticipantLimit() : 0)
-                .requestModeration(dto.getRequestModeration() != null ? dto.getRequestModeration() : true)
+                .paid(dto.getPaid() != null && dto.getPaid())
+                .participantLimit(dto.getParticipantLimit() == null
+                        ? 0
+                        : dto.getParticipantLimit())
+                .requestModeration(dto.getRequestModeration() == null
+                        || dto.getRequestModeration())
                 .title(dto.getTitle())
                 .build();
     }
 
-    public static EventFullDto toFullDto(Event event, Long confirmedRequests, Long views) {
+    public static EventFullDto toFullDto(
+            Event event,
+            Long confirmedRequests,
+            Long views
+    ) {
+        Location location = new Location(
+                event.getLocation().getLat(),
+                event.getLocation().getLon()
+        );
+
         return EventFullDto.builder()
                 .id(event.getId())
                 .annotation(event.getAnnotation())
@@ -33,10 +57,7 @@ public class EventMapper {
                 .description(event.getDescription())
                 .eventDate(event.getEventDate())
                 .initiator(UserMapper.toShortDto(event.getInitiator()))
-                .location(new ru.practicum.main.dto.Location(
-                        event.getLocation().getLat(),
-                        event.getLocation().getLon()
-                ))
+                .location(location)
                 .paid(event.getPaid())
                 .participantLimit(event.getParticipantLimit())
                 .publishedOn(event.getPublishedOn())
@@ -47,7 +68,16 @@ public class EventMapper {
                 .build();
     }
 
-    public static EventShortDto toShortDto(Event event, Long confirmedRequests, Long views) {
+    public static EventShortDto toShortDto(
+            Event event,
+            Long confirmedRequests,
+            Long views
+    ) {
+        Location location = new Location(
+                event.getLocation().getLat(),
+                event.getLocation().getLon()
+        );
+
         return EventShortDto.builder()
                 .id(event.getId())
                 .annotation(event.getAnnotation())

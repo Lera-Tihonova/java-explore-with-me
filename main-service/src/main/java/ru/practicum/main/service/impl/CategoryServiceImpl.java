@@ -50,12 +50,10 @@ public class CategoryServiceImpl implements CategoryService {
         Category category = categoryRepository.findById(catId)
                 .orElseThrow(() -> new NotFoundException("Категория с id " + catId + " не найдена"));
 
-        // Если имя не изменилось — просто возвращаем категорию
         if (category.getName().equals(request.getName())) {
             return CategoryMapper.toDto(category);
         }
 
-        // Если имя изменилось — проверяем уникальность
         if (categoryRepository.existsByName(request.getName())) {
             throw new ConflictException("Категория с таким именем уже существует");
         }
@@ -73,7 +71,8 @@ public class CategoryServiceImpl implements CategoryService {
         Category category = categoryRepository.findById(catId)
                 .orElseThrow(() -> new NotFoundException("Категория с id " + catId + " не найдена"));
 
-        if (!eventRepository.findByCategory(category).isEmpty()) {
+        // ИСПРАВЛЕНИЕ: используем findByCategoryId вместо findByCategory
+        if (!eventRepository.findByCategoryId(catId).isEmpty()) {
             throw new ConflictException("Категория не пуста, нельзя удалить");
         }
 

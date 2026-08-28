@@ -10,18 +10,22 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface ParticipationRequestRepository extends JpaRepository<ParticipationRequest, Long> {
+public interface ParticipationRequestRepository
+        extends JpaRepository<ParticipationRequest, Long> {
 
-    List<ParticipationRequest> findByRequesterId(Long userId);
+    List<ParticipationRequest> findByRequesterIdOrderByCreatedAsc(Long userId);
 
-    List<ParticipationRequest> findByEventId(Long eventId);
+    List<ParticipationRequest> findByEventIdOrderByCreatedAsc(Long eventId);
 
     Optional<ParticipationRequest> findByIdAndRequesterId(Long requestId, Long userId);
 
-    Optional<ParticipationRequest> findByIdAndEventId(Long requestId, Long eventId);
+    boolean existsByRequesterIdAndEventId(Long requesterId, Long eventId);
 
-    boolean existsByRequesterIdAndEventIdAndStatus(Long requesterId, Long eventId, String status);
-
-    @Query("SELECT COUNT(r) FROM ParticipationRequest r WHERE r.event.id = :eventId AND r.status = 'CONFIRMED'")
-    Long countConfirmedByEventId(@Param("eventId") Long eventId);
+    @Query("""
+            select count(r)
+            from ParticipationRequest r
+            where r.event.id = :eventId
+              and r.status = 'CONFIRMED'
+            """)
+    long countConfirmedByEventId(@Param("eventId") Long eventId);
 }
