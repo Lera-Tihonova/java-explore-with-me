@@ -9,6 +9,7 @@ import ru.practicum.main.dto.CompilationDto;
 import ru.practicum.main.dto.EventShortDto;
 import ru.practicum.main.dto.NewCompilationDto;
 import ru.practicum.main.dto.UpdateCompilationRequest;
+import ru.practicum.main.exception.BadRequestException;
 import ru.practicum.main.exception.NotFoundException;
 import ru.practicum.main.mapper.CompilationMapper;
 import ru.practicum.main.mapper.EventMapper;
@@ -39,6 +40,11 @@ public class CompilationServiceImpl implements CompilationService {
     @Override
     @Transactional
     public CompilationDto createCompilation(NewCompilationDto request) {
+        // Проверка длины названия ПРИ СОЗДАНИИ
+        if (request.getTitle() != null && request.getTitle().length() > 50) {
+            throw new BadRequestException("Заголовок подборки не может превышать 50 символов");
+        }
+
         Set<Event> events = resolveEvents(request.getEvents());
         Compilation compilation = CompilationMapper.toEntity(request, events);
         Compilation saved = compilationRepository.save(compilation);
@@ -51,6 +57,11 @@ public class CompilationServiceImpl implements CompilationService {
         Compilation compilation = compilationRepository.findById(compId)
                 .orElseThrow(() ->
                         new NotFoundException("Подборка с id " + compId + " не найдена"));
+
+        // Проверка длины названия ПРИ ОБНОВЛЕНИИ
+        if (request.getTitle() != null && request.getTitle().length() > 50) {
+            throw new BadRequestException("Заголовок подборки не может превышать 50 символов");
+        }
 
         if (request.getTitle() != null) {
             compilation.setTitle(request.getTitle());
@@ -126,7 +137,6 @@ public class CompilationServiceImpl implements CompilationService {
         List<Long> eventIds = events.stream().map(Event::getId).toList();
 
         Map<Long, Long> confirmedMap = requestRepository.countConfirmedByEventIds(eventIds);
-
         Map<Long, Long> viewsMap = eventService.getViewsBatch(eventIds);
 
         Set<EventShortDto> eventDtos = events.stream()
