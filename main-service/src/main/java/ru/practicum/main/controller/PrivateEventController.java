@@ -50,7 +50,7 @@ public class PrivateEventController {
     public EventFullDto updateEvent(
             @PathVariable Long userId,
             @PathVariable Long eventId,
-            @Valid @RequestBody UpdateEventUserRequest request) {
+            @Valid @RequestBody UpdateEventRequest request) {
         log.info("PATCH /users/{}/events/{} - обновление события", userId, eventId);
         return eventService.updateEventByUser(userId, eventId, request);
     }

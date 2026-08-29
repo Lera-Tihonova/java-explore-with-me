@@ -7,10 +7,8 @@ import ru.practicum.main.dto.EventFullDto;
 import ru.practicum.main.dto.EventShortDto;
 import ru.practicum.main.service.EventService;
 import ru.practicum.stats.client.StatsClient;
-import ru.practicum.stats.dto.EndpointHitDto;
 
 import jakarta.servlet.http.HttpServletRequest;
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Slf4j
@@ -37,7 +35,7 @@ public class PublicEventController {
     ) {
         log.info("GET /events - получение событий с фильтрацией");
 
-        saveStats("/events", request);
+        statsClient.hit("/events", request.getRemoteAddr());
 
         return eventService.getEventsForPublic(
                 text,
@@ -59,23 +57,8 @@ public class PublicEventController {
     ) {
         log.info("GET /events/{} - получение подробной информации о событии", id);
 
-        saveStats("/events/" + id, request);
+        statsClient.hit("/events/" + id, request.getRemoteAddr());
 
         return eventService.getEventForPublic(id, request);
-    }
-
-    private void saveStats(String uri, HttpServletRequest request) {
-        try {
-            EndpointHitDto hitDto = EndpointHitDto.builder()
-                    .app("ewm-main-service")
-                    .uri(uri)
-                    .ip(request.getRemoteAddr())
-                    .timestamp(LocalDateTime.now())
-                    .build();
-            statsClient.hit(hitDto);
-            log.info("Статистика сохранена: uri={}, ip={}", uri, request.getRemoteAddr());
-        } catch (Exception e) {
-            log.warn("Не удалось сохранить статистику для запроса {}", uri, e);
-        }
     }
 }

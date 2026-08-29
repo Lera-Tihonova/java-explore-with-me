@@ -3,8 +3,7 @@ package ru.practicum.main.service;
 import ru.practicum.main.dto.EventFullDto;
 import ru.practicum.main.dto.EventShortDto;
 import ru.practicum.main.dto.NewEventDto;
-import ru.practicum.main.dto.UpdateEventAdminRequest;
-import ru.practicum.main.dto.UpdateEventUserRequest;
+import ru.practicum.main.dto.UpdateEventRequest;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
@@ -21,7 +20,7 @@ public interface EventService {
     EventFullDto updateEventByUser(
             Long userId,
             Long eventId,
-            UpdateEventUserRequest request
+            UpdateEventRequest request
     );
 
     List<EventFullDto> getEventsForAdmin(
@@ -36,7 +35,7 @@ public interface EventService {
 
     EventFullDto updateEventByAdmin(
             Long eventId,
-            UpdateEventAdminRequest request
+            UpdateEventRequest request
     );
 
     List<EventShortDto> getEventsForPublic(

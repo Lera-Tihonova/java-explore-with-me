@@ -24,17 +24,27 @@ public class StatsClient {
 
     private final RestTemplate restTemplate;
     private final String serverUrl;
+    private final String appName;
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    public StatsClient(@Value("${stats-server.url}") String serverUrl) {
+    public StatsClient(@Value("${stats-server.url}") String serverUrl,
+                       @Value("${stats-server.app-name:ewm-main-service}") String appName) {
         this.serverUrl = serverUrl;
+        this.appName = appName;
         this.restTemplate = new RestTemplate();
     }
 
-    public void hit(EndpointHitDto hitDto) {
-        log.info("Отправка статистики: app={}, uri={}, ip={}", hitDto.getApp(), hitDto.getUri(), hitDto.getIp());
+    public void hit(String uri, String ip) {
+        log.info("Отправка статистики: uri={}, ip={}", uri, ip);
 
         try {
+            EndpointHitDto hitDto = EndpointHitDto.builder()
+                    .app(appName)
+                    .uri(uri)
+                    .ip(ip)
+                    .timestamp(LocalDateTime.now())
+                    .build();
+
             String url = serverUrl + "/hit";
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);

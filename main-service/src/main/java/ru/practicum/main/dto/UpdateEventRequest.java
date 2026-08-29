@@ -7,7 +7,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import ru.practicum.main.dto.Location;
 
 import java.time.LocalDateTime;
 
@@ -15,7 +14,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class UpdateEventAdminRequest {
+public class UpdateEventRequest {
 
     @Size(min = 20, max = 2000)
     private String annotation;
@@ -25,7 +24,7 @@ public class UpdateEventAdminRequest {
     @Size(min = 20, max = 7000)
     private String description;
 
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime eventDate;
 
     private Location location;
