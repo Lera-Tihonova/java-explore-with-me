@@ -33,7 +33,9 @@ public class CategoryServiceImpl implements CategoryService {
     public CategoryDto createCategory(NewCategoryDto request) {
         log.info("Создание категории: {}", request.getName());
 
-        // Проверка убрана — БД сама выбросит ConstraintViolationException при нарушении уникальности
+        if (categoryRepository.existsByName(request.getName())) {
+            throw new ConflictException("Категория с таким именем уже существует");
+        }
 
         Category category = CategoryMapper.toEntity(request);
         Category savedCategory = categoryRepository.save(category);
@@ -50,6 +52,10 @@ public class CategoryServiceImpl implements CategoryService {
 
         if (category.getName().equals(request.getName())) {
             return CategoryMapper.toDto(category);
+        }
+
+        if (categoryRepository.existsByName(request.getName())) {
+            throw new ConflictException("Категория с таким именем уже существует");
         }
 
         category.setName(request.getName());

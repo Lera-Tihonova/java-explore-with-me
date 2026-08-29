@@ -72,15 +72,10 @@ public class ErrorHandler {
     }
 
     @ExceptionHandler
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ResponseStatus(HttpStatus.CONFLICT)  // ← ИСПРАВЛЕНО: BAD_REQUEST → CONFLICT
     public ErrorResponse handleDataIntegrityViolation(DataIntegrityViolationException e) {
         log.error("Нарушение целостности данных: {}", e.getMessage(), e);
         String message = e.getMessage();
-        if (message != null && (message.contains("length") || message.contains("max") ||
-                message.contains("truncate") || message.contains("Value too long") ||
-                message.contains("longer than"))) {
-            return ErrorResponse.badRequest("Превышена допустимая длина поля");
-        }
         if (message != null && (message.contains("unique") || message.contains("duplicate") ||
                 message.contains("already exists"))) {
             return ErrorResponse.conflict("Нарушение уникальности данных");
