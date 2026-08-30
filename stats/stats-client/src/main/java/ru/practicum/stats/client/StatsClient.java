@@ -14,8 +14,6 @@ import org.springframework.web.util.UriComponentsBuilder;
 import ru.practicum.stats.dto.EndpointHitDto;
 import ru.practicum.stats.dto.ViewStatsDto;
 
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -26,20 +24,27 @@ public class StatsClient {
 
     private final RestTemplate restTemplate;
     private final String serverUrl;
+    private final String appName;
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    public StatsClient(@Value("${stats-server.url}") String serverUrl) {
+    public StatsClient(@Value("${stats-server.url}") String serverUrl,
+                       @Value("${stats-server.app-name:ewm-main-service}") String appName) {
         this.serverUrl = serverUrl;
+        this.appName = appName;
         this.restTemplate = new RestTemplate();
     }
 
-    /**
-     * Сохранение информации о запросе к эндпоинту
-     */
-    public void hit(EndpointHitDto hitDto) {
-        log.info("Отправка статистики: app={}, uri={}, ip={}", hitDto.getApp(), hitDto.getUri(), hitDto.getIp());
+    public void hit(String uri, String ip) {
+        log.info("Отправка статистики: uri={}, ip={}", uri, ip);
 
         try {
+            EndpointHitDto hitDto = EndpointHitDto.builder()
+                    .app(appName)
+                    .uri(uri)
+                    .ip(ip)
+                    .timestamp(LocalDateTime.now())
+                    .build();
+
             String url = serverUrl + "/hit";
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
@@ -62,30 +67,29 @@ public class StatsClient {
         }
     }
 
-    /**
-     * Получение статистики за период
-     */
     public List<ViewStatsDto> getStats(LocalDateTime start, LocalDateTime end, List<String> uris, Boolean unique) {
         log.info("Запрос статистики: start={}, end={}, uris={}, unique={}", start, end, uris, unique);
 
         try {
-            // Кодируем даты согласно спецификации
-            String encodedStart = URLEncoder.encode(start.format(FORMATTER), StandardCharsets.UTF_8);
-            String encodedEnd = URLEncoder.encode(end.format(FORMATTER), StandardCharsets.UTF_8);
+            String startStr = start.format(FORMATTER);
+            String endStr = end.format(FORMATTER);
 
             UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(serverUrl + "/stats")
-                    .queryParam("start", encodedStart)
-                    .queryParam("end", encodedEnd);
+                    .queryParam("start", startStr)
+                    .queryParam("end", endStr);
 
             if (uris != null && !uris.isEmpty()) {
-                builder.queryParam("uris", uris.toArray());
+                for (String uri : uris) {
+                    builder.queryParam("uris", uri);
+                }
             }
 
             if (unique != null) {
                 builder.queryParam("unique", unique);
             }
 
-            String url = builder.build().encode().toUriString();
+            String url = builder.build(false).toUriString();
+            log.info("URL запроса статистики: {}", url);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setAccept(List.of(MediaType.APPLICATION_JSON));
