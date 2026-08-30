@@ -6,6 +6,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.main.dto.EventFullDto;
 import ru.practicum.main.dto.UpdateEventRequest;
+import ru.practicum.main.exception.BadRequestException;
 import ru.practicum.main.service.EventService;
 
 import jakarta.validation.Valid;
@@ -38,6 +39,11 @@ public class AdminEventController {
             @PathVariable Long eventId,
             @Valid @RequestBody UpdateEventRequest request) {
         log.info("PATCH /admin/events/{} - редактирование события", eventId);
+
+        if (request.getEventDate() != null && request.getEventDate().isBefore(LocalDateTime.now())) {
+            throw new BadRequestException("Дата события не может быть в прошлом");
+        }
+
         return eventService.updateEventByAdmin(eventId, request);
     }
 }

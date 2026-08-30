@@ -1,0 +1,158 @@
+{
+  "info": {
+    "name": "Explore With Me - Comments Feature",
+    "description": "Тестирование дополнительной функциональности - комментарии к событиям",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Comments",
+      "item": [
+        {
+          "name": "Создание комментария",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"text\": \"Отличное событие! Очень понравилось.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/1/events/1/comments",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "1", "events", "1", "comments"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Получение комментариев к событию",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/events/1/comments?from=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["events", "1", "comments"],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Получение комментариев пользователя",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/1/comments?from=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "1", "comments"],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Обновление комментария",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"text\": \"Обновленный текст комментария\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/1/comments/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "1", "comments", "1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Удаление комментария",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/1/comments/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "1", "comments", "1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Попытка создания комментария к неопубликованному событию (409 Conflict)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"text\": \"Комментарий к неопубликованному событию\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/1/events/2/comments",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "1", "events", "2", "comments"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Попытка удаления чужого комментария (409 Conflict)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/2/comments/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "2", "comments", "1"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    }
+  ]
+}

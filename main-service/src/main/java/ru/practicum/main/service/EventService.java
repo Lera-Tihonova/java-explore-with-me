@@ -5,7 +5,6 @@ import ru.practicum.main.dto.EventShortDto;
 import ru.practicum.main.dto.NewEventDto;
 import ru.practicum.main.dto.UpdateEventRequest;
 
-import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -50,8 +49,5 @@ public interface EventService {
             int size
     );
 
-    EventFullDto getEventForPublic(
-            Long eventId,
-            HttpServletRequest request
-    );
+    EventFullDto getEventForPublic(Long eventId);
 }

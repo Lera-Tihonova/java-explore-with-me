@@ -25,7 +25,6 @@ import ru.practicum.main.service.EventService;
 import ru.practicum.stats.client.StatsClient;
 import ru.practicum.stats.dto.ViewStatsDto;
 
-import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -169,10 +168,6 @@ public class EventServiceImpl implements EventService {
 
         Event event = findEvent(eventId);
 
-        if (request.getEventDate() != null && request.getEventDate().isBefore(LocalDateTime.now())) {
-            throw new BadRequestException("Дата события не может быть в прошлом");
-        }
-
         updateEventFields(event, request);
 
         if (AdminStateAction.PUBLISH_EVENT.name().equals(request.getStateAction())) {
@@ -234,7 +229,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public EventFullDto getEventForPublic(Long eventId, HttpServletRequest request) {
+    public EventFullDto getEventForPublic(Long eventId) {
         log.debug("Получение события для публичного доступа eventId={}", eventId);
 
         Event event = findEvent(eventId);
@@ -242,8 +237,6 @@ public class EventServiceImpl implements EventService {
         if (event.getState() != EventState.PUBLISHED) {
             throw new NotFoundException("Событие с id " + eventId + " не опубликовано");
         }
-
-        // Статистика сохраняется в контроллере — дублирование убрано
 
         return toFullDto(event);
     }
@@ -354,7 +347,7 @@ public class EventServiceImpl implements EventService {
         return EventMapper.toFullDto(event, confirmed, views);
     }
 
-    public Map<Long, Long> getViewsBatch(List<Long> eventIds) {
+    private Map<Long, Long> getViewsBatch(List<Long> eventIds) {
         if (eventIds.isEmpty()) {
             return Map.of();
         }

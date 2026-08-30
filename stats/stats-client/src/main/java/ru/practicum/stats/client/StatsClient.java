@@ -14,6 +14,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import ru.practicum.stats.dto.EndpointHitDto;
 import ru.practicum.stats.dto.ViewStatsDto;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -34,7 +35,9 @@ public class StatsClient {
         this.restTemplate = new RestTemplate();
     }
 
-    public void hit(String uri, String ip) {
+    public void hit(HttpServletRequest request) {
+        String uri = request.getRequestURI();
+        String ip = request.getRemoteAddr();
         log.info("Отправка статистики: uri={}, ip={}", uri, ip);
 
         try {

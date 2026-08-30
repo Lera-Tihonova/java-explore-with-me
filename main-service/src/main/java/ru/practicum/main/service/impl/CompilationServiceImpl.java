@@ -35,12 +35,10 @@ public class CompilationServiceImpl implements CompilationService {
     private final CompilationRepository compilationRepository;
     private final EventRepository eventRepository;
     private final ParticipationRequestRepository requestRepository;
-    private final EventServiceImpl eventService;
 
     @Override
     @Transactional
     public CompilationDto createCompilation(NewCompilationDto request) {
-        // Проверка длины названия ПРИ СОЗДАНИИ
         if (request.getTitle() != null && request.getTitle().length() > 50) {
             throw new BadRequestException("Заголовок подборки не может превышать 50 символов");
         }
@@ -58,7 +56,6 @@ public class CompilationServiceImpl implements CompilationService {
                 .orElseThrow(() ->
                         new NotFoundException("Подборка с id " + compId + " не найдена"));
 
-        // Проверка длины названия ПРИ ОБНОВЛЕНИИ
         if (request.getTitle() != null && request.getTitle().length() > 50) {
             throw new BadRequestException("Заголовок подборки не может превышать 50 символов");
         }
@@ -137,13 +134,12 @@ public class CompilationServiceImpl implements CompilationService {
         List<Long> eventIds = events.stream().map(Event::getId).toList();
 
         Map<Long, Long> confirmedMap = requestRepository.countConfirmedByEventIds(eventIds);
-        Map<Long, Long> viewsMap = eventService.getViewsBatch(eventIds);
 
         Set<EventShortDto> eventDtos = events.stream()
                 .map(event -> EventMapper.toShortDto(
                         event,
                         confirmedMap.getOrDefault(event.getId(), 0L),
-                        viewsMap.getOrDefault(event.getId(), 0L)
+                        0L
                 ))
                 .collect(Collectors.toSet());
 
