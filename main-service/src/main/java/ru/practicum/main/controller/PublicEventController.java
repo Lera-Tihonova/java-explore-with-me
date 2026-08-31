@@ -35,7 +35,7 @@ public class PublicEventController {
     ) {
         log.info("GET /events - получение событий с фильтрацией");
 
-        statsClient.hit("/events", request.getRemoteAddr());
+        statsClient.hit(request);
 
         return eventService.getEventsForPublic(
                 text,
@@ -57,8 +57,8 @@ public class PublicEventController {
     ) {
         log.info("GET /events/{} - получение подробной информации о событии", id);
 
-        statsClient.hit("/events/" + id, request.getRemoteAddr());
+        statsClient.hit(request);
 
-        return eventService.getEventForPublic(id, request);
+        return eventService.getEventForPublic(id);
     }
 }

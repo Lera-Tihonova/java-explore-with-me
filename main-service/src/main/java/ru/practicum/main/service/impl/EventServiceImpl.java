@@ -18,6 +18,7 @@ import ru.practicum.main.exception.NotFoundException;
 import ru.practicum.main.mapper.EventMapper;
 import ru.practicum.main.model.*;
 import ru.practicum.main.repository.CategoryRepository;
+import ru.practicum.main.repository.CommentRepository;
 import ru.practicum.main.repository.EventRepository;
 import ru.practicum.main.repository.ParticipationRequestRepository;
 import ru.practicum.main.repository.UserRepository;
@@ -25,7 +26,6 @@ import ru.practicum.main.service.EventService;
 import ru.practicum.stats.client.StatsClient;
 import ru.practicum.stats.dto.ViewStatsDto;
 
-import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -46,6 +46,7 @@ public class EventServiceImpl implements EventService {
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
     private final ParticipationRequestRepository requestRepository;
+    private final CommentRepository commentRepository;
     private final StatsClient statsClient;
 
     @Override
@@ -70,7 +71,7 @@ public class EventServiceImpl implements EventService {
         Event saved = eventRepository.save(event);
         log.debug("Событие создано с id={}", saved.getId());
 
-        return EventMapper.toFullDto(saved, 0L, 0L);
+        return EventMapper.toFullDto(saved, 0L, 0L, 0L);
     }
 
     @Override
@@ -169,10 +170,6 @@ public class EventServiceImpl implements EventService {
 
         Event event = findEvent(eventId);
 
-        if (request.getEventDate() != null && request.getEventDate().isBefore(LocalDateTime.now())) {
-            throw new BadRequestException("Дата события не может быть в прошлом");
-        }
-
         updateEventFields(event, request);
 
         if (AdminStateAction.PUBLISH_EVENT.name().equals(request.getStateAction())) {
@@ -234,7 +231,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public EventFullDto getEventForPublic(Long eventId, HttpServletRequest request) {
+    public EventFullDto getEventForPublic(Long eventId) {
         log.debug("Получение события для публичного доступа eventId={}", eventId);
 
         Event event = findEvent(eventId);
@@ -242,8 +239,6 @@ public class EventServiceImpl implements EventService {
         if (event.getState() != EventState.PUBLISHED) {
             throw new NotFoundException("Событие с id " + eventId + " не опубликовано");
         }
-
-        // Статистика сохраняется в контроллере — дублирование убрано
 
         return toFullDto(event);
     }
@@ -320,12 +315,14 @@ public class EventServiceImpl implements EventService {
         List<Long> eventIds = events.stream().map(Event::getId).toList();
         Map<Long, Long> confirmedMap = requestRepository.countConfirmedByEventIds(eventIds);
         Map<Long, Long> viewsMap = getViewsBatch(eventIds);
+        Map<Long, Long> commentsMap = commentRepository.countByEventIds(eventIds);
 
         return events.stream()
                 .map(event -> EventMapper.toShortDto(
                         event,
                         confirmedMap.getOrDefault(event.getId(), 0L),
-                        viewsMap.getOrDefault(event.getId(), 0L)
+                        viewsMap.getOrDefault(event.getId(), 0L),
+                        commentsMap.getOrDefault(event.getId(), 0L)
                 ))
                 .toList();
     }
@@ -338,12 +335,14 @@ public class EventServiceImpl implements EventService {
         List<Long> eventIds = events.stream().map(Event::getId).toList();
         Map<Long, Long> confirmedMap = requestRepository.countConfirmedByEventIds(eventIds);
         Map<Long, Long> viewsMap = getViewsBatch(eventIds);
+        Map<Long, Long> commentsMap = commentRepository.countByEventIds(eventIds);
 
         return events.stream()
                 .map(event -> EventMapper.toFullDto(
                         event,
                         confirmedMap.getOrDefault(event.getId(), 0L),
-                        viewsMap.getOrDefault(event.getId(), 0L)
+                        viewsMap.getOrDefault(event.getId(), 0L),
+                        commentsMap.getOrDefault(event.getId(), 0L)
                 ))
                 .toList();
     }
@@ -351,10 +350,11 @@ public class EventServiceImpl implements EventService {
     private EventFullDto toFullDto(Event event) {
         Long confirmed = requestRepository.countConfirmedByEventId(event.getId());
         Long views = getViews(event.getId());
-        return EventMapper.toFullDto(event, confirmed, views);
+        Long comments = commentRepository.countByEventId(event.getId());
+        return EventMapper.toFullDto(event, confirmed, views, comments);
     }
 
-    public Map<Long, Long> getViewsBatch(List<Long> eventIds) {
+    private Map<Long, Long> getViewsBatch(List<Long> eventIds) {
         if (eventIds.isEmpty()) {
             return Map.of();
         }

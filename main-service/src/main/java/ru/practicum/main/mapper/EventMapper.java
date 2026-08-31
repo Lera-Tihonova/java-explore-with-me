@@ -41,7 +41,8 @@ public final class EventMapper {
     public static EventFullDto toFullDto(
             Event event,
             Long confirmedRequests,
-            Long views
+            Long views,
+            Long commentsCount
     ) {
         Location location = new Location(
                 event.getLocation().getLat(),
@@ -65,13 +66,15 @@ public final class EventMapper {
                 .state(event.getState().name())
                 .title(event.getTitle())
                 .views(views)
+                .commentsCount(commentsCount)
                 .build();
     }
 
     public static EventShortDto toShortDto(
             Event event,
             Long confirmedRequests,
-            Long views
+            Long views,
+            Long commentsCount
     ) {
         return EventShortDto.builder()
                 .id(event.getId())
@@ -83,6 +86,7 @@ public final class EventMapper {
                 .paid(event.getPaid())
                 .title(event.getTitle())
                 .views(views)
+                .commentsCount(commentsCount)
                 .build();
     }
 }
