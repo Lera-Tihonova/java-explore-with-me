@@ -6,8 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.main.dto.CommentDto;
-import ru.practicum.main.dto.NewCommentDto;
-import ru.practicum.main.dto.UpdateCommentDto;
+import ru.practicum.main.dto.CommentRequestDto;
 import ru.practicum.main.service.CommentService;
 
 import java.util.List;
@@ -24,7 +23,7 @@ public class CommentController {
     public CommentDto createComment(
             @PathVariable Long userId,
             @PathVariable Long eventId,
-            @Valid @RequestBody NewCommentDto request
+            @Valid @RequestBody CommentRequestDto request
     ) {
         log.info("POST /users/{}/events/{}/comments - добавление комментария", userId, eventId);
         return commentService.createComment(userId, eventId, request);
@@ -54,7 +53,7 @@ public class CommentController {
     public CommentDto updateComment(
             @PathVariable Long userId,
             @PathVariable Long commentId,
-            @Valid @RequestBody UpdateCommentDto request
+            @Valid @RequestBody CommentRequestDto request
     ) {
         log.info("PATCH /users/{}/comments/{} - обновление комментария", userId, commentId);
         return commentService.updateComment(userId, commentId, request);

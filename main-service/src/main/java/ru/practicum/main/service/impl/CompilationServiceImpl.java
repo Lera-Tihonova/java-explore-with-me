@@ -139,7 +139,8 @@ public class CompilationServiceImpl implements CompilationService {
                 .map(event -> EventMapper.toShortDto(
                         event,
                         confirmedMap.getOrDefault(event.getId(), 0L),
-                        0L
+                        0L,
+                        0L  // commentsCount = 0 для подборок
                 ))
                 .collect(Collectors.toSet());
 

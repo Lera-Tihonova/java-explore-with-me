@@ -8,8 +8,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.main.dto.CommentDto;
-import ru.practicum.main.dto.NewCommentDto;
-import ru.practicum.main.dto.UpdateCommentDto;
+import ru.practicum.main.dto.CommentRequestDto;
 import ru.practicum.main.exception.ConflictException;
 import ru.practicum.main.exception.NotFoundException;
 import ru.practicum.main.mapper.CommentMapper;
@@ -37,7 +36,7 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     @Transactional
-    public CommentDto createComment(Long userId, Long eventId, NewCommentDto request) {
+    public CommentDto createComment(Long userId, Long eventId, CommentRequestDto request) {
         log.debug("Создание комментария пользователем userId={} к событию eventId={}", userId, eventId);
 
         User author = userRepository.findById(userId)
@@ -50,12 +49,7 @@ public class CommentServiceImpl implements CommentService {
             throw new ConflictException("Нельзя комментировать неопубликованное событие");
         }
 
-        Comment comment = Comment.builder()
-                .text(request.getText())
-                .author(author)
-                .event(event)
-                .createdAt(LocalDateTime.now())
-                .build();
+        Comment comment = CommentMapper.toEntity(author, event, request.getText());
 
         Comment saved = commentRepository.save(comment);
         log.debug("Создан комментарий id={}", saved.getId());
@@ -97,7 +91,7 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     @Transactional
-    public CommentDto updateComment(Long userId, Long commentId, UpdateCommentDto request) {
+    public CommentDto updateComment(Long userId, Long commentId, CommentRequestDto request) {
         log.debug("Обновление комментария userId={}, commentId={}", userId, commentId);
 
         Comment comment = commentRepository.findById(commentId)
